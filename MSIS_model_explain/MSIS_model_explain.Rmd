@@ -1,0 +1,834 @@
+---
+title: "Age-structured transmission dynamic models of RSV"
+subtitle: "Tutorial 1 for transition"
+author: 
+- Gigi (Zhe Zheng)^[zhe.zheng@yale.edu; zhe.zheng@aya.yale.edu; gigi.zhe.zheng@gmail.com]
+- Dan (Daniel Weinberger) 
+- Ginny (Virginia Pitzer)
+date: "2022-12-22"
+fontsize: 10pt
+output: 
+  beamer_presentation:
+  theme: CambridgeUS
+  colortheme: "beaver"
+  fonttheme: "structurebold"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## References
+
+This age structured transmission dynamic model of RSV was first developed by Ginny Pitzer in her publication: https://doi.org/10.1371/journal.ppat.1004591. With the help of Dan Weinberger, we translated Ginny's Matlab codes to R codes. We further developed/modified this model, resulting in several mechanistic models corresponding to a variety of scenarios. Please refer to:
+
+- https://doi.org/10.1001/jamanetworkopen.2021.41779
+- https://doi.org/10.1038/s41541-022-00550-5
+- https://doi.org/10.1101/2022.11.10.22282132
+
+The complete code example for this tutorial please refer to
+- https://github.com/weinbergerlab/RSV_metapop/tree/master/SimpleModel
+
+## The Compartmental Model Structure (states of transmission dynamics)
+
+
+::: columns
+
+:::: {.column width="25%"}
+
+
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+
+::::
+
+:::: {.column width="75%"}
+
+- Each white compartment correspond to an underlying status in transmission dynamics. These statuses are **unobservable**. 
+    - **M** All infants born are born with protective maternal immunity, which wanes exponentially. The waning rate is $\omega$.
+    - $\boldsymbol{S_0}$ After protective maternal immunity wanes, infants are susceptible to RSV infection. Being exposed to infection, susceptible infants progress to infected status  at rate $\lambda$.
+    - $\boldsymbol{I_0}$ We ignored the exposed status (short and do not affect transmission dynamics) and assumed infected individuals are infectious. The first-time infected individuals recovered at rate $\gamma_1$
+    - $\boldsymbol{S_n}$ Here $n$ is the number of previous infections. Previous infection reduced the risk of re-infection. $\sigma_1 \sim \sigma_3$
+    - $\boldsymbol{I_n}$ Here $n$ is the number of infections. Infectious periods are shorter in subsequent infections. $\gamma_2 \sim \gamma_3$
+::::
+
+:::
+
+
+## The Compartmental Model Structure (rates)
+
+::: columns
+
+:::: {.column width="25%"}
+
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+\
+
+\small
+\textcolor{red}{Parameters in red are estimated for each state} 
+\
+\
+\textcolor{blue}{Parameters in blue are from published literature (either as fixed value inputs or ranges as priors)}
+
+::::
+
+:::: {.column width="75%"}
+
+- Rates in this compartmental model.  
+    - $\textcolor{red}\omega$ is the waning rate of protective maternal immunity
+    $$\textcolor{red}\omega=\frac{1}{\textcolor{blue}{\text{duration of maternal immunity}}}$$
+    -  $\lambda$ is the force of infection
+    $$\lambda= \textcolor{red}{\beta_0}(1+\textcolor{red}{A} \text{cos}(2\pi\nu t-\textcolor{red}{\phi})) I$$ 
+    $\textcolor{red}{\phi}$ has a minus sign for moving towards a later time period.
+    $$\nu= \frac{1}{\textcolor{blue}{\text{period}}}$$
+     $$I=I_1+ \textcolor{blue}{\rho_1}I_2+\textcolor{blue}{\rho_2}(I_3+I_4)$$
+    here $\textcolor{blue}{\rho_1 \sim \rho_2}$ are the relative infectiousness for 2nd and subsequent infections (probabilities)
+    - $\textcolor{blue}{\gamma_1 \sim \gamma_3}$ are the rates of recovery
+    $$\textcolor{blue}{\gamma_1 \sim \gamma_3} = \frac{1}{\textcolor{blue}{\text{duration of infectiousness}}}$$
+::::
+
+:::
+
+## The Compartmental Model Structure (probabilities)
+
+::: columns
+
+:::: {.column width="25%"}
+
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+
+::::
+
+:::: {.column width="75%"}
+
+- Probabilities in this compartmental model.  
+    - $\textcolor{blue}{\sigma_1 \sim \sigma_3}$ are the  relative risks of infection following 1st, 2nd, 3rd+ infections
+    \
+    - $\textcolor{blue}{\rho_1 \sim \rho_2}$ are the relative infectiousness for 2nd and subsequent infections
+    \
+    - $\textcolor{blue}{d_1(a) \sim d_2(a)}$ are the age- and infection-specific risks of developing lower respiratory tract illness given infections (LRTIs). In Ginny's model, only the first two infections will result in LRTIs. Later, we modified the model to assume subsequent infections will also lead to LRTIs $\textcolor{blue}{d_3(a) \sim d_4(a)}$. This is very important for model calibration in older adult populations (For example, this will be needed in the cost-effectiveness of older adult RSV vaccine project).
+    \
+    - $\textcolor{blue}{h_1(a) \sim h_4(a)}$ are the probability of requiring inpatient care given LRTIs. These probabilities are also age- and infection-specific.
+\
+- \textcolor{blue}{From published literature (Either as fixed value inputs or ranges as priors)}
+
+::::
+
+:::
+
+## The Compartmental Model Structure (observed states for calibration)
+
+::: columns
+
+:::: {.column width="25%"}
+
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+::::
+
+:::: {.column width="75%"}
+
+- Each white compartment correspond to a disease status. These statuses are **observable**. These outputs of transmission dynamic models will be used for the model calibration.
+\
+\
+    - **D** Individuals in each age group who develop lower respiratory tract illness. We can find this information in state emergency department visits and state inpatient visits.
+    \
+    \
+    - **H** Individuals in each age group who are admitted to hospitals because of RSV infection. We can find this information in state inpatient visits. For my previous work, I calibrated the transmission model outputs to time-series generated from State Inpatient Databases. 
+    \
+    \
+    -  Click to see information on [\textcolor{blue}{State Emergency Department Databases}](https://www.hcup-us.ahrq.gov/db/state/sedddbdocumentation.jsp) and [\textcolor{blue}{State Inpatient Databases}](https://www.hcup-us.ahrq.gov/db/state/siddbdocumentation.jsp).
+::::
+
+:::
+
+## The Compartmental Model Structure (observed statuses for calibration)
+
+::: columns
+
+:::: {.column width="25%"}
+
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+
+::::
+
+:::: {.column width="75%"}
+
+- Each white compartment correspond to a disease status. These statuses are **observable**. These outputs of transmission dynamic models will be used for the model calibration. 
+    \
+    \
+    - Note that although the model outputs specify the number of previous infection, we are unlikely to observe this information in real world.
+    \
+    \
+    - Note that [\textcolor{blue}{State Emergency Department Databases}](https://www.hcup-us.ahrq.gov/db/state/sedddbdocumentation.jsp) and [\textcolor{blue}{State Inpatient Databases}](https://www.hcup-us.ahrq.gov/db/state/siddbdocumentation.jsp) only captured the RSV visits that are tested and recorded. This may not be a problem in pediatric populations but it needs to be corrected for the testing and recording ratios in adult populations.
+
+::::
+
+:::
+
+## R Code in Details (Basic Age-structure MSIS model)
+
+### Setting up the packages
+
+```{r, echo=T}
+## load required packages
+library(deSolve) 
+# for solving the ordinary differential equations
+library(RColorBrewer) 
+# color palettes for making plots
+library(reshape2) 
+# for reshape data frames
+```
+
+## Setting up inputs
+
+```{r, echo=T}
+# T is time points. T contains both the burn-in period 
+# and evaluation period.
+# N_ages is number of age groups.
+
+Pop1 <- readRDS('./SimpleModel/data_and_parms/pop1.rds') 
+#initial population, by age group.  
+
+B <-  readRDS('./SimpleModel/data_and_parms/Birth_rate.rds')
+# birth rate in each age group
+# a matrix with T rows and  N_ages columns
+# The first column is the population birth rate 
+# They are born into the 0 month age group
+# The rest columns are all zeros (1 months to 80+ age group)  
+# For U.S., you will find this information in CDC wonder 
+```
+
+Click to see information on [\textcolor{blue}{CDC wonder}](https://wonder.cdc.gov/natality-expanded-current.html)
+
+## Setting up inputs
+
+```{r, echo=T}
+c2 <- readRDS( './SimpleModel/data_and_parms/c2.rds')
+# The contact patterns in each age group.
+# The patterns affect the age-specific likelihood 
+# of a susceptible individual come into contact with 
+# an infectious individual.
+# The exact values does not matter because we will
+# estimate beta_0.
+# This information can be found in published literature
+# Then you may consider rearrange the matrix to
+# reflect the age groups in your model
+# I wrote an r script to rearrange the contact matrix
+# see contactmatrix.r under code source folder
+```
+
+## Age structure in this example
+
+In Ginny's paper, the age groups are as follows: The <12 month olds, were divided into monthly age classes. The remaining population was divided into 6 classes: 1–4 years old, 5–9 years, 10–19 years, 20–39 years, 40–59-years, and 60+ years old. In this example, the 1-4 year old are divided into 12 month age classes as well. 
+\
+\
+How to divide age depends on the goal of your project. It relates closely to the parameters for model calibration and the difficulty of model calibration.
+\
+\
+We set names of age groups 
+```{r, echo=T}
+N_ages <- length(Pop1) 
+agenames <- paste0('Agegrp', 1:N_ages) 
+#Could replace this with vector of actual age names
+```
+
+## Initialize the compartments (states) 
+Please refer to page 3: [The Compartmental Model Structure (states of transmission dynamics)]
+```{r, echo=TRUE}
+StateNames <- c('M','S0','I1','S1','I2','S2','I3','S3','I4')
+
+# N age groups x K states
+yinit.matrix <- array(NA, dim=c(N_ages, length(StateNames)))
+
+# assign row names and column names
+dimnames(yinit.matrix)[[1]] <- agenames
+dimnames(yinit.matrix)[[2]] <- StateNames
+
+# Initializes population with infants under 3 months
+# are protected by maternal immunity and
+# with 1 infected person per age group in other age groups
+yinit.matrix[,c('S1','I2','S2','I3','S3','I4')]  = 0
+yinit.matrix[,'M'] = c(Pop1[1:3], rep(0,N_ages-3))
+yinit.matrix[,'S0'] = c(rep(0,3),Pop1[4:N_ages]-rep(N_ages-3)) 
+yinit.matrix[,'I1'] = c(rep(0,3), rep(1,N_ages-3))  
+```
+
+## Vectorize the states for ODE input
+
+```{r, echo=TRUE}
+#Vectorize the ynit matrix
+yinit.vector <- as.vector(yinit.matrix) 
+
+# Create array that has the labels by age, state 
+# and use this to name the yinit.vector
+name.array <- array(NA, dim=dim(yinit.matrix))
+for(i in 1:dim(name.array)[1]){
+ for(j in 1:dim(name.array)[2]){
+   name.array[i,j] <- paste(dimnames(yinit.matrix)[[1]][i],
+                            dimnames(yinit.matrix)[[2]][j])
+    }
+  }
+
+name.vector <- as.vector(name.array)
+names(yinit.vector) <- name.vector
+```
+
+
+## Contact matrix in our case
+
+```{r, echo=T, fig.dim=c(2.8, 2.8)}
+n.cols=100
+nice.cols <-  colorRampPalette(brewer.pal(9,
+                                  "YlOrRd"))(n.cols)
+heatmap(c2/sum(diag(c2)), 
+        Rowv=NA, Colv=NA, scale='none', col=nice.cols)
+```
+
+## Section outlines
+\
+- In the first section, we will learn how to run transmission model with all parameters known. 
+\
+\
+- In the second section, we will learn to use maximum likelihood estimation (MLE) to estimate the unknown parameters (one value for each unknown parameter). 
+\
+\
+- In the third section, we will learn to use STAN, a probabilistic programming language for statistical inference^[https://en.wikipedia.org/wiki/Stan_(software)], to get the 95% credible intervals from the posterior samples of these unknown parameters.   
+
+## Section 1: run transmission model with all parameters known
+\
+We first assign values to all required parameters, including rates and probabilities. Most of these are described in Table 2 of Pitzer et al, PLOS Pathogens^[https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004591]
+\
+\
+```{r, echo=T}
+###########################################
+# omega = 1/duration of maternal immunity 
+DurationMatImmunityDays= 112 #days
+###########################################
+
+##############################################
+# gamma1~gamma3 = 1/duration of infectiousness 
+# Duration in days
+dur.days1 <- 10 #days
+dur.days2 <- 7 #days
+dur.days3 <- 5 #days
+############################################## 
+```
+
+## Parameters related to the force of transmission
+$$\lambda= \textcolor{red}{\beta_0}(1+\textcolor{red}{A} \text{cos}(2\pi\nu t-\textcolor{red}{\phi})) I$$ 
+
+$\beta_0$ is the effective contact rate, meaning the number of infections per unit time per susceptible per infected.\
+\
+$\beta_0$ = per capita transmission probability * total contact rate
+\
+```{r, echo=T}
+#These parameters will likely be estimated in practice
+##################################################### 
+#Seasonal components--
+Amp = 0.2 #Seasonal amplitude
+phi = 3.327749 #Seasonal phase shift 
+# (depends on the starting month;here 0=peak @ July 1)
+
+##################################################### 
+# per capita transmission probability
+baseline.txn.rate <- 9.2 
+# this is now for the entire infectious period
+# it needs to divide the length of infectious period
+##################################################### 
+```
+
+## Parameters related to the force of transmission (continued)
+$\beta_0$ = total contact rate * per capita transmission probability
+
+Note, In Density Dependent transmission, the contact rate (c) depends on the population density.  In Frequent Dependent transmission, the contact rate (c’) does not depend on the population density. (In this example, we assumed frequency-dependent)
+\
+\
+```{r, echo=T}
+############################################### 
+c=c2 # contact rate
+
+q=1 # use this to switch between density (q=0) vs 
+# frequency-dependent (q=1) transmission
+###############################################
+```
+\
+To better understand the different in Frequent Dependent transmission and Density Dependent transmission, please check out: https://parasiteecology.wordpress.com/2013/10/17/density-dependent-vs-frequency-dependent-disease-transmission/
+
+## Probabilities related to the number of infections
+Please refer to page 5: [The Compartmental Model Structure (probabilities)]
+```{r, echo=T}
+##########################################################
+#Relative infectiousness for 2nd and subsequent infections
+rho1 = 0.75
+rho2 = 0.51
+
+##########################################################
+#Relative risk of infection following 1st, 2nd, 3rd+ infections
+sigma1=0.76
+sigma2=0.6
+sigma3=0.4
+##########################################################
+```
+
+## Age-specific probabilities related to the number of infections
+
+In this example, the LRI and hospitalization probabilities are from several cohort studies. These studies reported the probabilities in aggregated age groups (every 3 month). In later section, if you would like to fit the model outputs to self-defined age groups, you will need to come up with the age-specific probabilities first. This can be done by creating a polynomial regression fit to the reported probabilities of the cohort studies. 
+
+```{r, echo=T}
+###########################################
+# LRI probability
+###########################################
+
+#proportion of first infections that are LRI (by age)
+delta1=c(rep(.40,3),rep(.39,3),rep(.21,3),
+         rep(.20,3),0.16,rep(.14,3),rep(0.05,N_ages-16))
+#proportion of second infections that are LRI 
+delta2=.5*delta1
+#proportion of third infections that are LRI
+delta3=.7*delta2
+```
+
+## Age-specific probabilities related to the number of infections (continued)
+
+```{r, echo=T}
+###########################################
+# Hospitalization probability
+###########################################
+
+#proportion of first infection that are hospitalized
+hosp1=c(.18*rep(.40,3),0.08*rep(.39,3),
+        0.07*rep(.21,3),0.06*rep(.20,3),0.06*0.16,
+        0.05*rep(.14,3),0.02*rep(0.05,N_ages-16))
+# = hosp prob given LRI * LRI prob given infection
+
+#proportion of second infection that are hospitalized
+hosp2=.4*hosp1
+
+#proportion of subsequent infection that are hospitalized 
+#(The last two probabilities come from the previous 
+#fitting of the transmission dynamic model)
+hosp3=c(rep(0,N_ages-2),0.00001,0.00004)
+```
+
+## Parameters governing population dynamics
+
+```{r, echo=T}
+############################################### 
+# birth rate  
+# Matrix: T rows, N_ages columns; columns 2:N_ages all 0s
+PerCapitaBirthsYear=B 
+############################################### 
+# net rate of crude deaths (+) and immigration (-) 
+# You should calibrate this parameter 
+# so we can reproduce the population growth
+um= -0.0002227 #(from all age groups)
+
+############################################### 
+# Aging rate = 1/width age class (months) 
+# Vector of long N_age
+WidthAgeClassMonth = c(rep(1,times=12), 
+      rep(12,times=4),  60, 120, 240, 240, 240)  
+###############################################
+```
+
+## Save parameters in a list
+
+```{r saveparms, echo=T}
+parms<-list(PerCapitaBirthsYear=PerCapitaBirthsYear,
+            DurationMatImmunityDays=DurationMatImmunityDays,
+            WidthAgeClassMonth=WidthAgeClassMonth,
+            um=um, # net growth rate
+            Amp=Amp, # seasonal amplitude
+            phi=phi, # seasonal peak timing
+            rho1=rho1, # Relative infectiousness (2nd)
+            rho2=rho2, # Relative infectiousness (3rd+)
+            dur.days1=dur.days1,# Duration of infectiousness
+            dur.days2=dur.days2,# Duration of infectiousness
+            dur.days3=dur.days3,# Duration of infectiousness
+            yinit.matrix=yinit.matrix, # initial states
+            baseline.txn.rate = baseline.txn.rate,
+            q=q, # Frequency or Density dependent
+            contact=c2, # contact matrix
+            sigma1=sigma1, # Relative risk of infection (2nd)
+            sigma2=sigma2, # Relative risk of infection (3rd)
+            sigma3=sigma3, # Relative risk of infection (4th+)
+            time.step='month')
+```
+
+## Read in the model
+
+```{r, echo=T}
+#Read in the model
+source('./SimpleModel/data_and_parms/simple_model.R') 
+```
+
+In the following slides, we will show the source function of ordinary differential equations. You can modify this function to reflect different assumptions.
+\
+\
+
+Note, please modify the r script **simple_model.R** in the folder **data_and_parms** under **SimpleModel**. In this PDF, the function of transmission dynamic model is separated into several chunks for the tutorial purpose.
+
+## Source function of the transmission dynamic model
+```{r,echo=T,eval=FALSE}
+simple_model <- function(t,y,parms,time.step='month'){
+
+  # read in initial states and their names
+  States<-array(y, dim=dim(parms$yinit.matrix))
+  dimnames(States) <- dimnames(parms$yinit.matrix)
+  
+  # unify the time unit of parameter inputs
+  if(parms$time.step=='month'){
+    period=12
+    length.step=30.44 #days
+  }else if(parms$time.step=='week'){
+    period=52.1775
+    length.step=7 #days
+  }
+``` 
+
+## Source function of the transmission dynamic model (continued)
+
+Note: Here we need to convert all the rates from 1/days to 1/length.step
+\
+```{r,echo=T,eval=FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+  # waning rate of maternal immunity (by time step)
+  omega = 1/(parms$DurationMatImmunityDays/length.step)
+  
+  # aging rate (by time step)
+  mu= 1/parms$WidthAgeClassMonth
+  if(parms$time.step=='week'){
+    mu= 1/(WidthAgeClassMonth*4.345)}
+  
+  # rate of recovery of first infection
+  gamma1= 1/(parms$dur.days1/length.step) 
+  # rate of recovery of second infection
+  gamma2= 1/(parms$dur.days2/length.step)
+  # rate of recovery of third infection
+  gamma3= 1/(parms$dur.days3/length.step)  
+  gamma4= gamma3  
+  #gamma3 stands for rate of recovery from subsequent infection
+``` 
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+  # Relative risk of infection (2nd)
+  sigma1=parms$sigma1 
+  # Relative risk of infection (3rd)
+  sigma2=parms$sigma2
+  # Relative risk of infection (4th+)
+  sigma3=parms$sigma3
+  
+  # Relative infectiousness (2nd)
+  rho1=parms$rho1 
+  # Relative infectiousness (3rd+)
+  rho2=parms$rho2
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+  #Pull out the states for the model as vectors
+  M <-  States[,'M'] # protected by maternal immunity
+  S0 <-  States[,'S0'] # purely susceptible population
+  I1 <-  States[,'I1'] # first time infection (infectious)
+  
+  S1 <-  States[,'S1'] 
+  # susceptible population with build-up immunity
+  I2 <-  States[,'I2'] # second time infection
+  
+  S2 <-  States[,'S2']
+  # susceptible population with lower risk of re-infection
+  I3 <-  States[,'I3'] # third time infection
+  
+  S3 <-  States[,'S3']
+  # susceptible population with lowest risk of re-infection
+  I4 <-  States[,'I4'] # subsequent time infection
+  
+  N_ages <- length(M) # the number of age groups
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE, tidy.opts=list(width.cutoff=60)}
+## parameter related to force of infection ################
+# per capita transmission probability
+baseline.txn.rate=parms$baseline.txn.rate
+# transmission probability per unit time
+b <- baseline.txn.rate/ (parms$dur.days1/length.step) 
+q=parms$q # q depends on transmission type 
+# (whether depends on population density or not)
+contact=parms$contact # c2 is the contact matrix
+# transmission probability per unit time in each age group
+beta <- (b/100)/(sum(yinit.matrix)^(1-q))*contact 
+# 100 is a scaling factor for the contact matrix we choose
+# (see Ginny's paper and Matlab code for details)
+# this does not matter because most likely
+# you will need to estimate baseline.txn.rate
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE}
+## parameter related to force of infection ################
+Amp=parms$Amp # seasonal amplitude
+phi=parms$phi # seasonal phase shift
+#seasonality
+seasonal.txn <- (1+Amp*cos(2*pi*(t-phi*period)/period))
+
+# seasonal transmission probability
+beta_a_i <- seasonal.txn * beta 
+infectiousN <- (I1+rho1*I2+rho2*I3+rho2*I4)/sum(States)
+# for frequency dependent transmission
+
+lambda <- infectiousN %*% beta_a_i # force of transmission
+lambda <- as.vector(lambda) # vectorize force of transmission
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE}
+# create a matrix to record the changing variables
+dy <- matrix(NA, nrow=N_ages, ncol=ncol(States))
+colnames(dy) <- colnames(States)
+    
+period.birth.rate <- 
+  log(parms$PerCapitaBirthsYear[t,]+1)/period
+# get period birth rate from annual birth rate
+# see the following page for birth rate calculation
+
+#um is death rate
+um=parms$um
+#mu represents aging to the next class
+Aging.Prop <- c(0,mu[1:(N.ages-1)])
+```
+
+## Period birth rate calculation
+
+For birth rate^[https://journals.plos.org/plospathogens/article/file?id=10.1371/journal.ppat.1004591.s016&type=supplementary]:
+\
+\
+The weekly per capita birth rate $B_w$ is equal to log(1+B)/52.18 because the data on the birth rate is annual and the differential equation model inherently assumes that growth is occurring exponentially. So if the annual birth rate is equal to 12 per 1000 per year (B=0.012), for example, then we are assuming that:
+$$N_1=N_0e^{(B_w*52.10)}$$ where $N_1$ is the population after 1 year and $N_0$ is the baseline population, and $N_1=N_0*(1+B)$.
+$$1.012=1*e^{(B_w*52.18)}$$
+$$B_w=log(1.012)/52.18$$.
+The same goes for getting monthly birth rate.
+
+## Source function of the transmission dynamic model (continued)
+
+For the equations, please refer to [the supplementary document of Ginny's paper](https://journals.plos.org/plospathogens/article/file?id=10.1371/journal.ppat.1004591.s016&type=supplementary)
+```{r,echo=T,eval=FALSE}
+# ordinary differential equations
+  dy[,'M'] <- period.birth.rate*sum(States) - 
+    (omega+(mu+um))*M +
+    Aging.Prop*c(0,M[1:(N_ages-1)]) 
+  
+  dy[,'S0'] <- omega*M -
+    lambda*S0 -
+    (mu + um)*S0 + 
+    Aging.Prop*c(0,S0[1:(N_ages-1)]) 
+  
+  dy[,'I1'] <-   lambda*S0 - 
+    (gamma1 + mu + um)*I1 + 
+    Aging.Prop*c(0,I1[1:(N_ages-1)]) 
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE}
+  dy[,'S1'] <- gamma1*I1 - 
+    sigma1*lambda*S1 - 
+    (mu+um)*S1 + 
+    Aging.Prop*c(0,S1[1:(N_ages-1)]) 
+  
+  dy[,'I2'] <- sigma1*lambda*S1 - 
+    gamma2*I2-(mu + um)*I2 + 
+    Aging.Prop*c(0,I2[1:(N_ages-1)]) 
+  
+  dy[,'S2'] <- gamma2*I2 - 
+    sigma2*lambda*S2 -
+    (mu+um)*S2 + 
+    Aging.Prop*c(0,S2[1:(N_ages-1)]) 
+  
+  dy[,'I3'] <- sigma2*lambda*S2 -
+    (gamma3 + mu+um)*I3 +  
+    Aging.Prop*c(0,I3[1:(N_ages-1)]) 
+```
+
+## Source function of the transmission dynamic model (continued)
+```{r,echo=T,eval=FALSE}
+  dy[,'S3'] <- gamma3*I3 +  
+    gamma4*I4 -
+    sigma3*lambda*S3 -
+    (mu + um)*S3 + 
+    Aging.Prop*c(0,S3[1:(N_ages-1)]) 
+  
+  dy[,'I4'] <- sigma3*lambda*S3 - 
+    gamma4*I4 - 
+    (mu + um)*I4 + 
+    Aging.Prop*c(0,I4[1:(N_ages-1)]) 
+  
+  derivs <- as.vector(dy)
+  
+  res <- list(derivs)
+  
+  return(res)
+}
+```
+
+## Run the model 
+
+**NOTE: time step here is in months--you need to adjust seasonality accordingly for the time step you choose**
+```{r,echo=T}
+ start_time = 1 # start date (years)
+ tmax = nrow(B)
+# end_time = 25 # end date (years)
+my_times <- seq(start_time, tmax, by = 1) 
+# gives a sequence from start to end in increments of 1
+```
+\
+Using the ODE function, we get the results of the transmission dynamic model^[NOTE: here we are just simulating with set parameters, not fitting to data].
+\
+```{r,echo=T}
+results <- ode(y=yinit.vector, t=my_times,  
+               func=simple_model, 
+            parms=parms)
+# y is the initial population in each state and age
+# t is the time steps of evaluation
+# func specify the ordinary differential equations
+# parms are all the parameter inputs
+```
+
+## Extract population growth in each age group and the entire population
+
+```{r,echo=T}
+#Ginny Pitzer used a 40-50 YEAR burn in period
+burnN <- 25*12 # you will need to evaluate 
+# whether after burn-in the model reach quasi-equilibrium
+results.burned <- results[-c(1:burnN),]
+
+# first get the total population in each time point
+pop.all <- rowSums(results.burned[,-1]) 
+
+# Then check the population growth in each age group
+# from wide format to long format
+all.m <- melt(results.burned[,
+              grep('Agegrp',colnames(results.burned))])
+# then we get the name of age group of each state
+all.m$agegrp <- sub(" .*", "",all.m$Var2) 
+# sum within age groups to get the age-specific
+# population in each time point
+all.c <- dcast(all.m, Var1~agegrp, fun.aggregate = sum)
+```
+
+## Exact the prevalence of infection from the results
+```{r,echo=T}
+##Any infected person
+infected.cols <- results.burned[,
+                c(grep('I1', colnames(results.burned)),
+                 grep('I2', colnames(results.burned)),
+                 grep('I3', colnames(results.burned)),
+                 grep('I4', colnames(results.burned)))]
+
+## Sum up the infected individuals at each time point
+infected.all <- apply(infected.cols,1,sum)# = rowsum
+
+## this chunk of code get the prevalence of infection
+## in each age group at each time point.
+infected.cols.m <- melt(infected.cols)
+infected.cols.m$agegrp <- sub(" .*", "",infected.cols.m$Var2 )
+infected.cols.c <- dcast(infected.cols.m,
+                         Var1~agegrp,
+                         fun.aggregate = sum)
+```
+
+## Visualize population growth and prevalence of infection
+
+```{r,echo=T}
+par(mfrow = c(2, 1))
+plot(pop.all,type="l",xlab="time (month)",ylab="population")
+plot(infected.all, type='l',xlab="time (month)",
+     ylab="prevalence of infection")
+```
+
+## Calculate the number of hospitalizations 
+
+### Take out all parameters needed to calculate hospitalizations^[This is not needed in our case since we already save them in the environment.]
+```{r,echo=T}
+q=1 # frequency dependent
+# transmission probability per unit time
+b= parms$baseline.txn.rate/(parms$dur.days1/30.44)
+contact=parms$contact # c2 is the contact matrix
+#transmission probability per unit time in each age group
+beta <- (b/100)/(sum(yinit.matrix)^(1-q))*contact
+Amp=parms$Amp # seasonal amplitude
+phi=parms$phi # seasonal phase shift
+
+rho1=parms$rho1 # Relative infectiousness (2nd)
+rho2=parms$rho2 # Relative infectiousness (3rd+)
+sigma1=parms$sigma1 # Relative risk of infection (2nd)
+sigma2=parms$sigma2 # Relative risk of infection (3rd)
+sigma3=parms$sigma3 # Relative risk of infection (4th+)
+t0=nrow(results.burned) # length of time for evaluation
+```
+
+## Calculate the number of hospitalizations (continued)
+
+### Take out all states needed to calculate hospitalizations (S and I)
+```{r,echo=T}
+I1 <- results.burned[,grep('I1', colnames(results.burned))]
+I2 <- results.burned[,grep('I2', colnames(results.burned))]
+I3 <- results.burned[,grep('I3', colnames(results.burned))]
+I4 <- results.burned[,grep('I4', colnames(results.burned))]
+S0 <- results.burned[,grep('S0', colnames(results.burned))]
+S1 <- results.burned[,grep('S1', colnames(results.burned))]
+S2 <- results.burned[,grep('S2', colnames(results.burned))]
+S3 <- results.burned[,grep('S3', colnames(results.burned))]
+```
+
+### calculate the force of infection
+```{r,echo=T}
+#################Force of infection################
+lambda1=matrix(0,nrow=t0,ncol=N_ages)
+ for (t in 1:t0)
+ {lambda1[t,]<-as.vector((1+Amp*cos(2*pi*(t-phi*12)/12))*
+              ((I1[t,]+rho1*I2[t,]+rho2*I3[t,]+rho2*I4[t,])
+               %*%beta)/sum(results.burned[t,]))}
+## (see pages 4, 29, and 30 for detailed explanation)
+```
+
+## Calculate the number of hospitalizations (continued)
+
+$$\textcolor{blue}{\lambda S_0 = \text{number of new first infection}}$$
+$$\textcolor{blue}{\sigma_1\lambda S_1 = \text{number of new second infection}}$$
+$$\textcolor{blue}{\sigma_2\lambda S_2 = \text{number of new third infection}}$$
+$$\textcolor{blue}{\sigma_3\lambda S_3 = \text{number of new subsequent infection}}$$
+
+number of hospitalizations = the probability of hospitalization given infection * the number of new infection
+\
+\
+```{r,echo=T}
+####Number of hospitalizations by age############## 
+   H1=matrix(0,nrow=t0,ncol=N_ages)
+   for (i in 1:N_ages){
+     H1[,i]=hosp1[i]*S0[,i]*lambda1[,i]+
+       hosp2[i]*sigma1*S1[,i]*lambda1[,i]+
+       hosp3[i]*sigma2*S2[,i]*lambda1[,i]+
+       hosp3[i]*sigma3*S3[,i]*lambda1[,i]}
+```
+
+
+## Plot the number of hospitalizations over time 
+```{r,echo=T, fig.dim=c(5, 3)}
+## time-series of number of hospitalizations ##
+plot(1:108,rowSums(H1),type="l",xlab="months",
+     ylab="simulated RSV hospitalizations")
+## the decrease at the end is likely caused by 
+## the drop of birth rate 0.0115 vs 0.013 (in 1980)
+```
+
+## Plot the age distribution of hospitalizations
+
+```{r,echo=T, fig.dim=c(5, 3)}
+## age distribution of hospitalizations ##
+barplot(c(sum(colSums(H1)[1:3]),
+          sum(colSums(H1)[4:6]),
+          sum(colSums(H1)[7:9]),
+          sum(colSums(H1)[10:12]),
+          colSums(H1)[13:21])/sum(H1),
+        xlab="age group",ylab="proportion")
+```
+
