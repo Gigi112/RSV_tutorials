@@ -832,3 +832,9 @@ barplot(c(sum(colSums(H1)[1:3]),
         xlab="age group",ylab="proportion")
 ```
 
+## Section 2: use maximum likelihood estimation (MLE) to estimate the unknown parameters
+
+In this example, we will use maximum likelihood estimation (MLE) to estimate the (1) per capita transmission probability: baseline.txn.rate, (2) seasonal amplitude: Amp, (3) seasonal peak timing: phi, (4) duration of maternal immunity: DurationMatImmunityDays. 
+\
+\
+We will treat the time-series and age distribution of RSV hospitalizations that we just simulated as observed status and calibrate our transmission dynamic models using MLE to estimate these "unknown" parameters.  
