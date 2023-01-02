@@ -218,7 +218,7 @@ c2 <- readRDS( './SimpleModel/data_and_parms/c2.rds')
 
 ## Age structure in this example
 
-In Ginny's paper, the age groups are as follows: The <12 month olds, were divided into monthly age classes. The remaining population was divided into 6 classes: 1–4 years old, 5–9 years, 10–19 years, 20–39 years, 40–59-years, and 60+ years old. In this example, the 1-4 year old are divided into 12 month age classes as well. 
+In Ginny's paper, the age groups are as follows: The <12 month olds, were divided into monthly age classes. The remaining population was divided into 6 classes: 1–4 years old, 5–9 years, 10–19 years, 20–39 years, 40–59-years, and 60+ years old. In this example, the 1-4 year old are divided into 12 month age classes as well. In under 1 year old, we calibrate the model to age category of every 3 month. 
 \
 \
 How to divide age depends on the goal of your project. It relates closely to the parameters for model calibration and the difficulty of model calibration.
@@ -288,7 +288,7 @@ heatmap(c2/sum(diag(c2)),
 - In the first section, we will learn how to run transmission model with all parameters known. 
 \
 \
-- In the second section, we will learn to use maximum likelihood estimation (MLE) to estimate the unknown parameters (one value for each unknown parameter). 
+- In the second section, we will learn to use maximum a posteriori / maximum likelihood estimation (MLE) to estimate the unknown parameters (one value for each unknown parameter). 
 \
 \
 - In the third section, we will learn to use STAN, a probabilistic programming language for statistical inference^[https://en.wikipedia.org/wiki/Stan_(software)], to get the 95% credible intervals from the posterior samples of these unknown parameters.   
@@ -301,7 +301,7 @@ We first assign values to all required parameters, including rates and probabili
 ```{r, echo=T}
 ###########################################
 # omega = 1/duration of maternal immunity 
-DurationMatImmunityDays= 112 #days
+DurationMatImmunityDays= 30 #days
 ###########################################
 
 ##############################################
@@ -330,7 +330,7 @@ phi = 3.327749 #Seasonal phase shift
 
 ##################################################### 
 # per capita transmission probability
-baseline.txn.rate <- 9.2 
+baseline.txn.rate <- 9 
 # this is now for the entire infectious period
 # it needs to divide the length of infectious period
 ##################################################### 
@@ -824,17 +824,213 @@ plot(1:108,rowSums(H1),type="l",xlab="months",
 
 ```{r,echo=T, fig.dim=c(5, 3)}
 ## age distribution of hospitalizations ##
-barplot(c(sum(colSums(H1)[1:3]),
-          sum(colSums(H1)[4:6]),
-          sum(colSums(H1)[7:9]),
-          sum(colSums(H1)[10:12]),
-          colSums(H1)[13:21])/sum(H1),
+barplot(c(sum(colSums(H1)[1:3]),# 0-2 months
+          sum(colSums(H1)[4:6]),# 3-5 months
+          sum(colSums(H1)[7:9]),# 6-8 months
+          sum(colSums(H1)[10:12]),# 9-11 months
+          colSums(H1)[13:21])/sum(H1), 
+        # 1,2,3,4 years old, 5–9 years,
+        # 10–19 years, 20–39 years, 
+        # 40–59-years, and 60+ years old.
         xlab="age group",ylab="proportion")
 ```
 
-## Section 2: use maximum likelihood estimation (MLE) to estimate the unknown parameters
+## Section 2: use maximum a posteriori (variation of MLE) to estimate the unknown parameters
 
-In this example, we will use maximum likelihood estimation (MLE) to estimate the (1) per capita transmission probability: baseline.txn.rate, (2) seasonal amplitude: Amp, (3) seasonal peak timing: phi, (4) duration of maternal immunity: DurationMatImmunityDays. 
+In this example, we will use maximum a posteriori to estimate the (1) per capita transmission probability: baseline.txn.rate, (2) seasonal amplitude: Amp, (3) seasonal peak timing: phi, (4) duration of maternal immunity: DurationMatImmunityDays. 
 \
 \
 We will treat the time-series and age distribution of RSV hospitalizations that we just simulated as observed status and calibrate our transmission dynamic models using MLE to estimate these "unknown" parameters.  
+
+```{r, echo=T}
+###### save simulated time-series and age distribution
+Hosp_sim <- as.integer(rowSums(H1)) # time-series
+
+agedist_Sim <- c(sum(colSums(H1)[1:3]),
+                 sum(colSums(H1)[4:6]),
+            sum(colSums(H1)[7:9]),
+            sum(colSums(H1)[10:12]),
+            colSums(H1)[13:21])/sum(H1)
+            # age distribution
+
+sim <- list(Hosp_sim=Hosp_sim,agedist_Sim=agedist_Sim)
+```
+
+
+## Create a list of known parameters
+
+```{r createparms, echo=T}
+parmset<-list(PerCapitaBirthsYear=PerCapitaBirthsYear,
+            WidthAgeClassMonth=WidthAgeClassMonth,
+            um=um, # net growth rate
+            rho1=rho1, # Relative infectiousness (2nd)
+            rho2=rho2, # Relative infectiousness (3rd+)
+            dur.days1=dur.days1,# Duration of infectiousness
+            dur.days2=dur.days2,# Duration of infectiousness
+            dur.days3=dur.days3,# Duration of infectiousness
+            yinit.matrix=yinit.matrix, # initial states
+            q=q, # Frequency or Density dependent
+            contact=c2, # contact matrix
+            sigma1=sigma1, # Relative risk of infection (2nd)
+            sigma2=sigma2, # Relative risk of infection (3rd)
+            sigma3=sigma3, # Relative risk of infection (4th+)
+            time.step='month',
+            t0=t0, # length of time for evaluation
+            N_ages=N_ages) # number of age group
+```
+
+## Create a function to calculate the log likelihood of given values 
+
+### Read in the function
+
+```{r, echo=T}
+source('./code source/Loglikelihood_MSIS.R') 
+```
+
+### View log likelihood calculation function
+```{r,echo=T,eval=FALSE}
+fitmodel <-  function(parameters,dat) { 
+# takes the parameter values and dataset as inputs
+
+# parameter related to R0 (baseline transmission rate)
+  protrans <- parameters[1] 
+# parameter related to seasonal amplitude
+  b1 <- parameters[2] 
+# parameter related to seasonal peak timing
+  trans <- parameters[3]
+# parameter related to the duration of maternal immunity
+  DMD <- parameters[4] 
+```
+
+## Log likelihood calculation function (continued)
+
+```{r,echo=T,eval=FALSE}
+  Amp <- exp(b1) #ensure positive 
+  baseline.txn.rate <- exp(protrans) #ensure positive
+# transform to its scale in the model  
+  phi <-  (2*pi*(exp(trans))) / (1+exp(trans))
+  durx <- exp(DMD) #ensure positive
+  
+# we need this for the function and model 
+# to recognize these parameters
+  durx <<- durx 
+  baseline.txn.rate <<- baseline.txn.rate
+  Amp <<- Amp
+  phi <<- phi
+  
+# Run transmission model with initial conditions 
+# and time steps defined above, 
+# and parameter values from function call
+  results <- ode(y=yinit.vector, t=my_times,  
+                 func=simple_model, 
+                 parms=c(parmset,
+                 baseline.txn.rate=baseline.txn.rate,
+                 Amp=Amp,
+                 phi=phi,
+                 DurationMatImmunityDays=durx))
+```
+
+## Log likelihood calculation function (continued)
+
+```{r,echo=T,eval=FALSE}
+   t0 <- parmset$t0 
+  # make sure the evaluation period are the same
+  results<- tail(results,t0) # get rid of burn-in period
+  St <- results[,-1]
+  
+  I1 <- St[,grep('I1', colnames(St))]
+  I2 <- St[,grep('I2', colnames(St))]
+  I3 <- St[,grep('I3', colnames(St))]
+  I4 <- St[,grep('I4', colnames(St))]
+  S0 <- St[,grep('S0', colnames(St))]
+  S1 <- St[,grep('S1', colnames(St))]
+  S2 <- St[,grep('S2', colnames(St))]
+  S3 <- St[,grep('S3', colnames(St))]
+  
+b=baseline.txn.rate/(parmset$dur.days1/30.44)
+beta=(b/100)/(sum(yinit.matrix)^(1-parmset$q))*parmset$contact
+```
+
+## Outcomes of interests given parameter inputs (function continued)
+
+```{r,echo=T,eval=FALSE}
+  #Force of infection
+  lambda1=matrix(0,nrow=t0,ncol=parmset$N_ages)
+  for (t in 1:t0)
+  {lambda1[t,]<-as.vector((1+Amp*cos(2*pi*(t-phi*12)/12))*
+                 ((I1[t,]+rho1*I2[t,]+rho2*I3[t,]+rho2*I4[t,])
+                  %*%beta)/sum(St[t,]))}
+
+ H1=matrix(0,nrow=t0,ncol=parmset$N_ages)
+  for (i in 1:parmset$N_ages){
+    H1[,i]=hosp1[i]*S0[,i]*lambda1[,i]+
+      hosp2[i]*sigma1*S1[,i]*lambda1[,i]+
+      hosp3[i]*sigma2*S2[,i]*lambda1[,i]+
+      hosp3[i]*sigma3*S3[,i]*lambda1[,i]}
+  H <- rowSums(H1)
+  
+  agedist <- c(sum(colSums(H1)[1:3]),sum(colSums(H1)[4:6]),
+               sum(colSums(H1)[7:9]),
+               sum(colSums(H1)[10:12]),
+               colSums(H1)[13:21])/sum(H1)
+```
+
+## Calculate the log likelihood of model outputs with given parameters (function continued)
+```{r,echo=T,eval=FALSE}
+LLall<-sum(dpois(x=sim$Hosp_sim,lambda=H,log=T)) 
+# fit to timeseries 
+# (number of cases follows poisson distribution)
+Lmulti<-dmultinom(x=sim$agedist_Sim,
+                  prob=agedist_Sim,log = T) 
+# fit to age distribution 
+# proportion (sum to 1) follows mutinomial distribution
+  
+  #prior
+  durprior <- dgamma(x=durx,22,5,log=T)
+  # give a prior for the duration of maternal immunity  
+  
+  #total Loglikelihood (because of log, we sum up)
+  LL <- LLall+LLmulti+durprior
+  
+  return(LL)
+}
+```
+
+## Use Optim function to maximum a posteriori (calibrate outputs of the transmission model to observed status)
+
+```{r,echo=T,eval=FALSE}
+fitLL <- optim(par=c(2.2,-1.6,1.2,3.16),
+  # remember to exponential these values
+  # to get the parameter estimates
+  # starting values for beta and gamma 
+  # - you should get the similar/same result 
+  # no matter which values you choose here
+      fn = fitmodel, # the distance function to optimise
+      dat = sim,  # the dataset we fit to 
+# ("dat" argument is passed to the function specified in fn)
+    control = list(fnscale=-1))# negative log likelihood
+# here we minimize the negative log likelihood
+```
+
+*"optimizers in statistical packages usually work by minimizing the result of a function... since the log likelihood and likelihood function have the same increasing or decreasing trend, you can minimize the negative log likelihood in order to actually perform the maximum likelihood estimate of the function you are testing."*^[https://stats.stackexchange.com/questions/141087/why-do-we-minimize-the-negative-likelihood-if-it-is-equivalent-to-maximization-o]
+
+## Compare the estimations and real values
+
+```{r,echo=T,eval=FALSE}
+fitLL # (check if the convergence = 0)
+# if not run for several times to make sure
+# the function did not stuck at local minimum
+
+exp(fitLL$par)
+# output: 8.99  0.20  3.3 (same as+/-pi) 
+# 23
+
+# Model input:
+# 9, 0.2, 3.33 30 days
+
+# estimations are very similar to model inputs
+```
+ 
+## Section 3: Stan model to estimate posterior samples
+
+Before we start, please learn the [Rstan basic](https://github.com/Gigi112/RSV_tutorials/tree/main/MSIS_model_explain/Introduction of Rstan.pptx) from the seperated tutorials in the same file path. 
