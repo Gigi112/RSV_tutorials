@@ -1,0 +1,51 @@
+---
+title: "Estimate RSV onset and peak timing"
+subtitle: "Tutorial 2 for transition"
+author: 
+- Gigi (Zhe Zheng)^[zhe.zheng@yale.edu; zhe.zheng@aya.yale.edu; gigi.zhe.zheng@gmail.com]
+- Dan (Daniel Weinberger) 
+- Ginny (Virginia Pitzer)
+date: "2023-01-04"
+fontsize: 10pt
+output: 
+  beamer_presentation:
+  theme: CambridgeUS
+  colortheme: "beaver"
+  fonttheme: "structurebold"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+
+## Background 
+
+```{r figure1,echo = F,out.width = "100%", out.extra="page=4"}
+knitr::include_graphics(path = "Epidemics_conference.pdf")
+```
+
+## Outline
+
+- In section 1, we will first introduce how to find the peak timing of RSV epidemics using harmonic regression (given regular annual/biennial seasonality). We will then talk about identifying the onset of RSV epidemics using second derivative method, regardless of the seasonality of RSV.
+\
+\
+- In section 2, we will learn how to use R to identify peak timing and onset of RSV epidemics.
+\
+\
+- In section 3, we will incorporate the spatial component of RSV epidemics. We will first introduce the concept of spatial autocorrelation and then lean to use R to account for spatial autocorrelation.
+
+## References
+
+Relevant readings:
+\
+\
+- [RSV onset timing at county level](https://doi.org/10.1093/cid/civ331)
+\
+\
+- [RSV peak timing on state level](https://doi.org/10.1371/journal.ppat.1004591)
+\
+\
+- [Comparing RSV onset timing before and during the COVID-19 pandemic](https://doi.org/10.1111/irv.12965)
+\
+\
+- [RSV peak timing at ZIP code level and the drivers of RSV spread](https://doi.org/10.1126/sciadv.abd6421)
