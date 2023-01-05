@@ -1,0 +1,337 @@
+---
+title: "Quantitative Methods in Infectious Disease"
+subtitle: "Time series examples"
+author: "Dan Weinberger"
+date: 'November 28, 2018'
+runtime: shiny
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+require(RCurl)
+require(shiny)
+set.seed(123)
+```
+
+## Examples
+
+Here are some worked examples of what we are covering in class
+
+## Generating harmonic curves
+-First create an index variable for time (1,2,3...t)
+-Then use sine and cosine functions to generate a wave with specified period
+-12 month harmonic (sine and cosine waves)
+```{r harmonics, echo=TRUE}
+t<-1:120
+sin12<-sin(2*pi*t/12)
+cos12<-cos(2*pi*t/12)
+plot(sin12, type='l', col='red')
+points(cos12, type='l', lty=2, col='blue')
+```
+
+##Vary the period 
+```{r period.slider, echo=FALSE}
+#library(shiny)
+shinyApp(
+
+  ui = fluidPage(
+    sliderInput("period", "Period:",
+               min=2, max=36, value=12),
+    plotOutput("periodPlot")
+  ),
+
+  server = function(input, output) {
+    output$periodPlot = renderPlot({
+      plot(sin12, type='l', col='gray')
+      points(sin(2*pi*t/input$period),type='l', col='red', xlab='time' )
+      title(paste0('sin(2*pi*t/',input$period,')'))
+    },width = "auto", height = "auto")
+  }
+)
+```
+
+#Harmonic Regression
+
+##Generate count data with known periodicity
+-120 months total (10 years of data)
+-Has both a 10 and 20 month cycle
+-Amplitude=1.5
+```{r gen_data , echo=TRUE}
+n=120
+t<-1:n
+set.seed(123)
+#Generate some  data that has a frequency of 1/10 and 1/20  frequency (period of 10 ,10 )
+amp1=0.75
+freq1=1/12 # high frequency
+
+amp2=1.5
+freq2=1/24 #low frequency
+
+xt1a=amp1*cos(2*3.14159*t*freq1) #component 1
+xt1b=amp2*cos(2*3.14159*t*freq2) #component 2
+intercept<-0.0
+lambda<- exp(intercept+xt1a+xt1b)
+xt1=rpois(n,lambda)
+
+```
+
+## View the data we generated
+```{r plots1, echo=FALSE}
+par(mfrow=c(2,2), mar=c(2,2,1,1))
+plot(xt1a, bty='l' , main='Component 1', type='l' , ylim=range(c(xt1a,xt1b)))
+plot(xt1b, bty='l' , main='Component 2' , type='l', ylim=range(c(xt1a,xt1b)))
+plot(xt1a+xt1b, bty='l' , main='log(Component 1 +Component 2)' , type='l', ylim=range(xt1a+xt1b))
+plot(t, xt1,type="l", lwd=3, xaxt="n",bty="l",ylab="Cases of Disease", xlab="Month(n)", main="Cases")
+```
+
+##Create the needed harmonic variables with 10, 20, and 40 month periods
+```{r harm1, echo=TRUE}
+t<-1:120
+#Create harmonic variables
+sin12=sin(2*pi*t/12)
+cos12=cos(2*pi*t/12)
+sin24=sin(2*pi*t/24)
+cos24=cos(2*pi*t/24)
+sin48=sin(2*pi*t/48)
+cos48=cos(2*pi*t/48)
+```
+plot(xt1)
+
+
+## Fit a simple poisson regression with just 12 month period
+```{r harm_reg1}
+fit1a <- glm(xt1 ~ sin12+cos12, family='poisson' )
+pred1a<- fitted(fit1a)
+#summary(fit1a)
+par(mfrow=c(1,1))
+plot (t, xt1,bty="l", xaxt="n",yaxt="n",xlab="Time",ylab="Cases of Disease", type="p")
+points(t,pred1a, type="l",lty=1,col="blue", lwd=3)
+```
+
+## Add in 24 month periodicity
+```{r harm_reg2}
+fit2a <- glm(xt1 ~ sin12+cos12 +sin24 +cos24, family='poisson' )
+pred2a<- fitted(fit2a)
+#summary(fit2a)
+par(mfrow=c(1,1))
+plot (t, xt1,bty="l", xaxt="n",yaxt="n",xlab="Time",ylab="Cases of Disease", type="p")
+points(t,pred2a, type="l",lty=1,col="blue", lwd=3)
+```
+
+## Add in 48 month period 
+```{r harm_reg3}
+fit3a <- glm(xt1 ~ sin12+cos12 +sin24 +cos24 +sin48 +cos48, family='poisson' )
+pred3a<- fitted(fit3a)
+#summary(fit3a)
+par(mfrow=c(1,1))
+plot (t, xt1,bty="l", xaxt="n",yaxt="n",xlab="Time",ylab="Cases of Disease", type="p")
+points(t,pred3a, type="l",lty=1,col="blue", lwd=3)
+```
+
+## Determine best model with AIC (smaller=better)
+Winner is Model 2 (12 and 24 month period). Models 2 and 3 have similar AIC score (within 2 points), so we prefer the simpler model
+```{r aic}
+ AIC(fit1a)
+ AIC(fit2a)
+ AIC(fit3a)
+```
+
+#Calculate amplitude of the 10 and 20 month periods and their ratio
+```{r amp}
+beta_sin12<-coef(fit2a)['sin12']
+beta_cos12<-coef(fit2a)['cos12']
+beta_sin24<-coef(fit2a)['sin24']
+beta_cos24<-coef(fit2a)['cos24']
+
+amp12<-sqrt(beta_sin12^2 +beta_cos12^2)
+amp24<-sqrt(beta_sin24^2 +beta_cos24^2)
+ratio12_24<-amp24/amp12
+ratio12_24
+amp12 #True value=0.75
+amp24 #True value=1.5
+```
+## log(x+1)=bo+b1sin12+b2cos12+b3sin24+b4cos24
+
+
+##Fast Fourier Transform
+If we don't already know what periods should be present, can we use first use FFT to detect the correct period?
+Can sqrt or log stranform data prior to FFT
+```{r fft1, echo=TRUE}
+# Do a FFT
+fft1=fft(sqrt(xt1))
+fft1[1:10] 
+```
+Generates a bunch of imaginary numbers that are hard to interpret
+
+##Function to convert raw power spectrum into something interpretable
+```{r fft_func, echo=FALSE}
+plot.frequency.spectrum <- function(X.k, xlimits=c(5,n/2)) {
+  plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
+
+  plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2] 
+  plot.data[2:length(X.k),1] <- n/plot.data[2:length(X.k),1] 
+  
+  plot(plot.data, t="h", lwd=2,  
+       xlab="Period", ylab="Strength", 
+       xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))), bty='l', main="FFT power spectrum")
+}
+```
+
+#FFT power spectrum
+```{r plot_fft}
+par(mfrow=c(1,1))
+  plot.frequency.spectrum(fft1, xlimits=c(2,30))
+
+```
+
+##FFT slider
+```{r fft.slider, echo=FALSE}
+#library(shiny)
+shinyApp(
+
+  ui = fluidPage(
+    sidebarLayout(position = "left",
+    sidebarPanel(
+    sliderInput("period1", "Period1:",
+               min=2, max=48, value=12),
+     sliderInput("amplitude1", "Amplitude1:",
+               min=0.2, max=2.5, value=0.75),
+    sliderInput("period2", "Period2:",
+               min=2, max=48, value=24),
+      sliderInput("amplitude2", "Amplitude2:",
+               min=0.2, max=2.5, value=1.5),
+      sliderInput("int1", "Intercept:",
+               min=0, max=5, value=0)
+      ),
+    mainPanel(
+       plotOutput("periodPlot")
+    )
+  )
+  ),
+
+  server = function(input, output) {
+    t=1:120
+    xt1a=reactive({input$amplitude1*cos(2*3.14159*t/input$period1)}) #component 1
+    xt1b=reactive ({input$amplitude2*cos(2*3.14159*t/input$period2)}) #component 2
+    intercept<-reactive({input$int1})
+    lambda<- reactive ({exp(intercept()+xt1a()+xt1b())})
+    xt.slide=reactive ({rpois(n,lambda())})
+    fft.s=reactive ({fft(sqrt(xt.slide()))})
+
+    output$periodPlot = renderPlot({
+      par(mfrow=c(2,1), mar=c(3,2,1,1))
+   plot(t, xt.slide(),type="l", lwd=3, bty="l",ylab="Cases of Disease", xlab="Month(n)", main="Cases")
+      plot.frequency.spectrum(fft.s(), xlimits=c(2,max(input$period1, input$period2)))
+
+    },width = "auto", height = "auto")
+  })
+```
+
+
+#Wavelets
+
+##Pseudo-RSV data: Simulate time series with 12 and 24 month periods
+Imaine this is RSV case data from 2 states, and we want to investigate the
+epidemic characteristics in these states and the lag between states
+```{r waveset, echo=FALSE}
+set.seed(123)
+  n=120 # 10 years
+  t <- seq(1,n)
+ amp1=2.5
+ freq1=1/12 # high frequency
+ amp2=0.5
+ freq2=1/24 #low frequency
+
+ xt1a=amp1*cos(2*3.14159*t*freq1)
+ xt1b=amp2*cos(2*3.14159*t*freq2)
+
+#other series shifted by 3 months and with smaller biennial component
+ xt2a=amp1*cos(2*3.14159*t*freq1+1)
+ xt2b=0.5*amp2*cos(2*3.14159*t*freq2+1)
+
+ #Simulate some poisson count data
+ xt1=rpois(n,exp((1+xt1a + xt1b)))
+ xt2= rpois(n,exp(2+xt2a+xt2b))
+ plot(t, xt1,type="l", lwd=3, xaxt="n",bty="l",ylab="Cases of RSV", xlab="Month(n)", ylim=range(c(xt1,xt2)))
+ points(t,xt2, type="l",col="red")
+```
+
+```{r wave1, echo=FALSE}
+##Source the Wavelet functions from github. Originally from Johannson PLOS Medicine https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1000168
+urlX<-getURL("https://raw.githubusercontent.com/weinbergerlab/quant_meth_id/master/WaveletPkg.R")
+eval(parse(text = urlX))
+#source('WaveletPkg.R')
+```
+
+##Run wavelets on the sqrt(series) we generated
+```{r wave2, echo=TRUE}
+	wave1<- as.data.frame(cbind("x"=(sqrt(xt1)), "t"=t))
+	cwt1 <- complete.cwt(wave1, dj=1/10)
+	plot.cwt(cwt1)
+		wave2 <-as.data.frame(cbind("x"=(sqrt(xt2)), "t"=t)) 
+	cwt2 <- complete.cwt(wave2, dj=1/10)
+		plot.cwt(cwt2)
+
+```
+
+##Compare phase angle of the 2 series we generated
+```{r wave3, echo=FALSE}
+
+	phase1<-phase(cwt1, s=c(10, 14))
+	phase2<-phase(cwt2, s=c(10, 14))
+	plot(t, phase1,type='l', col="blue", lty=1)
+	points(t, phase2,type='l', col="red", lty=1)
+```
+
+##Calculate and view the phase difference
+```{r wave4, echo=TRUE}
+#Take modulo (%%) of phase difference to account for edge effects as described by Grenfell. This corrects for problems at start and begining of cycles
+	phase.diff2.1= phase2-phase1
+	phasediff2.1_correct <- ((phase.diff2.1 + 3*pi) %% (2*pi)) - (pi)
+	#shows corrected phase diff in modulo for the 12 month phase
+	plot(t,phasediff2.1_correct,type='l',col="blue", lty=1,ylim=c(-pi,pi))
+
+```
+
+##Convert phase difference to monthhs
+```{r wave5, echo=FALSE}
+	phase.diff.month <- phasediff2.1_correct * 12/(2*pi)
+	plot(t,phase.diff.month,type='l',col="blue", lty=1,ylim=c(-12,12))
+```
+
+##Reconstruct series, filtering out noise
+```{r wave.recon, echo=FALSE}
+ recon1 <- reconstruct.series(cwt1)  #square to get back to original scale
+ recon1a <- reconstruct.series(cwt1, sp1=10, sp2=27)^2 #keep periods of 10-27
+ recon1b <- reconstruct.series(cwt1, sp1=10, sp2=14)^2 # only keep periods of 10-14
+ plot(t,recon1,type='l',col="blue", lty=1)
+ points(t,recon1a,type="l",col="red",lty=1)
+ points(t,recon1b,type="l",col="green",lty=1)
+```
+
+#Compare biennial strength in the 2 series
+#Confirms that biennial pattern is stronger in series 1 than series 2
+```{r annual.biennial}
+
+biennial.func<-function(ds, period.range.short=c(10,14),period.range.long=c(20,30)){
+  annual.indices<-which(ds$periods>=period.range.short[1] & ds$periods<=period.range.short[2])
+  biennial.indices<-which(ds$periods>=period.range.long[1] & ds$periods<=period.range.long[2])
+  annual.power<-mean(ds$global[annual.indices])
+  biennial.power<-mean(ds$global[biennial.indices])
+  biennial.annual.ratio<-biennial.power/annual.power
+}
+
+series1.biennial.ratio<-biennial.func(ds=cwt1)
+series2.biennial.ratio<-biennial.func(ds=cwt2)
+series1.biennial.ratio
+series2.biennial.ratio
+```
+
+##Coherence analysis 
+Evaluate coherence between the 2 series. At which periods and which time points are the series in sync?
+```{r coherence}
+#Coherence analysis
+coh1.2 <- complete.coh(wave1,wave2, mc.sim=100, dj=1/10)
+plot.coh(coh1.2)
+```

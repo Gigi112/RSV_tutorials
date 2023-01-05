@@ -49,3 +49,13 @@ Relevant readings:
 \
 \
 - [RSV peak timing at ZIP code level and the drivers of RSV spread](https://doi.org/10.1126/sciadv.abd6421)
+
+## Harmonic regression to estimate the peak timing of RSV epidemics
+
+**Note: Most of the following materials came from Dan and Ginny's Lecture notes.**
+
+Please check out:
+
+-  Dan's class: Public Health Surveillance 
+\
+-  Ginny's class: Quantitative Methods in Infectious Diseases
