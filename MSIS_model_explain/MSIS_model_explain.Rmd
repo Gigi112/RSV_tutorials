@@ -126,7 +126,7 @@ The complete code example for this tutorial please refer to
 
 :::: {.column width="75%"}
 
-- Each white compartment correspond to a disease status. These statuses are **observable**. These outputs of transmission dynamic models will be used for the model calibration.
+- Each grey compartment correspond to a disease status. These statuses are **observable**. These outputs of transmission dynamic models will be used for the model calibration.
 \
 \
     - **D** Individuals in each age group who develop lower respiratory tract illness. We can find this information in state emergency department visits and state inpatient visits.

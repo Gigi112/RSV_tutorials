@@ -60,7 +60,7 @@ Please check out:
 \
 -  Ginny's class: Quantitative Methods in Infectious Diseases
 
-$$X_t=\mu+R\cos(ft+d)+e_t$$
+$$X_t=\mu+R\cos(2\pi ft+d)+e_t$$
 Where 
 \
 $X_t$ is the time-series contains a periodic (cyclic) component.
@@ -78,8 +78,7 @@ $e_t$ is the random error (noise) of the series.
 $t$ is the time step
 
 ## Pseudo-RSV data: Simulate time series with a 12 month period
-Imagine this is RSV case data from 2 states, and we want to investigate the
-epidemic characteristics in these states and the lag between states.
+Imagine this is RSV case data from 2 states, and we want to investigate the epidemic characteristics in these states and the lag between states.
 
 ```{r simulate, echo=T}
 set.seed(123)
@@ -91,7 +90,7 @@ set.seed(123)
 
  xt1a=amp1*cos(2*3.14159*t*freq)
 
-#other series shifted by 3 months
+#other series shifted by 2 months
  xt2a=amp1*cos(2*3.14159*t*freq+1)
  
 #Simulate some poisson count data
@@ -107,4 +106,17 @@ set.seed(123)
       ylim=range(c(xt1,xt2)))
  lines(t,xt2,col="red")
 ```
+## Investigate the epidemic characteristics of the pseudo-RSV time-serieses
+
+This is based on the prior knowledge that RSV has an annual cycle in temperate regions. For other viruses or RSV circulation in other climate, you should consider using wavelet analysis to identify the periodicity first.
+
+### Create the needed harmonic variables with 12 month periods
+```{r harm1, echo=TRUE}
+t<-1:120
+#Create harmonic variables
+sin12=sin(2*pi*t/12)
+cos12=cos(2*pi*t/12)
+```
+
+### Fit a simple poisson regression with 12 month period
 
