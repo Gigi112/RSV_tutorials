@@ -82,41 +82,133 @@ Imagine this is RSV case data from 2 states, and we want to investigate the epid
 
 ```{r simulate, echo=T}
 set.seed(123)
-  n=120 # 10 years
-  t <- seq(1,n)
- amp1=2.5 # high amplitude
- freq=1/12 # frequency = 1/period
- amp2=0.5 # low amplitude
+n=120 # 10 years
+t <- seq(1,n)
+amp1=2.5 # high amplitude
+freq=1/12 # frequency = 1/period
+amp2=2 # low amplitude
 
- xt1a=amp1*cos(2*3.14159*t*freq)
+xt1a=amp1*cos(2*3.14159*t*freq)
 
 #other series shifted by 2 months
- xt2a=amp1*cos(2*3.14159*t*freq+1)
+xt2a=amp2*cos(2*3.14159*t*freq+1)
  
 #Simulate some poisson count data
- xt1=rpois(n,exp((1+xt1a)))
- xt2= rpois(n,exp(2+xt2a))
+xt1=rpois(n,exp((1+xt1a)))
+xt2=rpois(n,exp(2+xt2a))
 ```
 
 ## The observed pseudo-RSV cases over time in two states
 
-```{r, echo=T}
- plot(t, xt1,type="l", lwd=3, xaxt="n",bty="l",
+```{r, echo=F}
+plot(t, xt1,type="l", lwd=3, xaxt="n",bty="l",
       ylab="Cases of RSV", xlab="Month(n)", 
-      ylim=range(c(xt1,xt2)))
- lines(t,xt2,col="red")
+      ylim=range(c(xt1,xt2)),
+     xlim=c(0,max(t)+10))
+lines(t,xt2,col="red")
+axis(2, at = seq(0,120,20))
+axis(1, at = seq(0,120,12))
+text(x=max(t)+8, y=xt1[119], labels = "state1",col="black")
+text(x=max(t)+8, y=xt2[119], labels = "state2",col="red")
 ```
+
 ## Investigate the epidemic characteristics of the pseudo-RSV time-serieses
 
-This is based on the prior knowledge that RSV has an annual cycle in temperate regions. For other viruses or RSV circulation in other climate, you should consider using wavelet analysis to identify the periodicity first.
+This is based on the prior knowledge that RSV has annual cycle in temperate regions and biannual cycle in high latitude regions. For other viruses or RSV circulation in other climate, you should consider using wavelet analysis to identify the periodicity first.
 
-### Create the needed harmonic variables with 12 month periods
 ```{r harm1, echo=TRUE}
+# Create the needed harmonic variables with 
+# 6 month, 12 month, and 24 month periodicities
 t<-1:120
 #Create harmonic variables
+sin6=sin(2*pi*t/6)
+cos6=cos(2*pi*t/6)
 sin12=sin(2*pi*t/12)
 cos12=cos(2*pi*t/12)
+sin24=sin(2*pi*t/24)
+cos24=cos(2*pi*t/24)
 ```
 
-### Fit a simple poisson regression with 12 month period
+When you write the equations with sin and cos terms, you will need to include them both in an equation. For example, if the coefficient of cos12 is significant, you will need to include sin12 even though the coefficient is not significant in the summary.
 
+## Fit a simple poisson regression with 12 month period for state 1
+
+```{r harm_reg1}
+fit1a <- glm(xt1~sin12+cos12, family='poisson')
+pred1a<- fitted(fit1a)
+#summary(fit1a)
+```
+```{r ,echo=FALSE}
+plot (t, xt1,bty="l", xaxt="n",yaxt="n",col="blue",
+      xlab="Month(n)",ylab="Cases of RSV", type="p",
+      ylim=range(c(xt1,pred1a)),
+     xlim=c(0,max(t)+25),main="State 1")
+lines(t,pred1a, lty=1, lwd=3)
+axis(2, at = seq(0,120,20))
+axis(1, at = seq(0,120,12))
+text(x=max(t)+15, y=pred1a[120], labels = "fitted",col="black")
+text(x=max(t)+15, y=xt1[120], labels = "observed",col="blue")
+```
+
+## Add in 24 month periodicity
+
+\scriptsize
+```{r harm_reg2}
+fit2a <- glm(xt1~sin12+cos12+sin24+cos24,family='poisson')
+pred2a<- fitted(fit2a)
+summary(fit2a)
+```
+
+## Add in 6 month periodicity
+
+\tiny
+```{r harm_reg3}
+fit3a<-glm(xt1~sin12+cos12+sin24+cos24+sin6+cos6,family='poisson' )
+pred3a<-fitted(fit3a)
+summary(fit3a)
+```
+
+## Determine best model with AIC (smaller=better)
+Winner is Model 1 (12 period). Also, when models have similar AIC score (within 2 points), we prefer a simpler model.
+```{r aic}
+ AIC(fit1a)
+ AIC(fit2a)
+ AIC(fit3a)
+```
+
+## Fit a simple poisson regression with 12 month period for state 2
+
+```{r harm_reg4}
+fit1b <- glm(xt2~sin12+cos12, family='poisson')
+pred1b<- fitted(fit1b)
+#summary(fit1a)
+```
+
+```{r, echo=FALSE}
+plot (t,xt2,bty="l", xaxt="n",yaxt="n",col="blue",
+      xlab="Month(n)",ylab="Cases of RSV", type="p",
+      pch = 20,
+      ylim=range(c(xt2,pred1b)),main="State 2")
+lines(t,pred1b, lty=1, lwd=1,col="red")
+axis(2, at = seq(0,120,20))
+axis(1, at = seq(0,120,12))
+```
+
+## Calculate amplitudes of the 12 periods in state1 and state2
+```{r amp}
+beta_sin12_xt1<-coef(fit2a)['sin12']
+beta_cos12_xt1<-coef(fit2a)['cos12']
+
+amp12_xt1<-sqrt(beta_sin12_xt1^2+
+                  beta_cos12_xt1^2)
+
+amp12_xt1 #True value=2.5
+
+beta_sin12_xt2<-coef(fit1b)['sin12']
+beta_cos12_xt2<-coef(fit1b)['cos12']
+
+amp12_xt2<-sqrt(beta_sin12_xt2^2+
+                  beta_cos12_xt2^2)
+
+amp12_xt2 #True value=2
+```
