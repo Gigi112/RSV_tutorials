@@ -49,6 +49,13 @@ Relevant readings:
 \
 \
 - [RSV peak timing at ZIP code level and the drivers of RSV spread](https://doi.org/10.1126/sciadv.abd6421)
+\
+\
+- [Assessment and optimization of respiratory syncytial virus prophylaxis in Connecticut, 1996–2013](https://www.nature.com/articles/s41598-021-90107-8)
+\
+\
+- [Disease outbreak outcome estimation using penalized splines](https://cran.r-project.org/web/packages/pspline.inference/vignettes/seasonal.html)
+
 
 ## Harmonic regression to estimate the peak timing of RSV epidemics
 
@@ -237,3 +244,63 @@ phase12_xt2
 \
 \
 - peak timing of 13.93 month (year 1) equals to 1.93 month (year 0)
+
+## Identify the onset of an epidemic using the second derivative method
+
+When we look at the pseudo-RSV cases in the last 12 months, it is hard to determine when is the onset by eyes.
+
+```{r, echo=F}
+plot(1:12, tail(xt1,12),type="l", lwd=3, xaxt="n",bty="l",
+      ylab="Cases of RSV", xlab="Month(n)", 
+      ylim=range(c(xt1,xt2)),
+     xlim=c(0,15))
+lines(1:12,tail(xt2,12),col="red")
+axis(2, at = seq(0,120,20))
+axis(1, at = seq(0,12,1))
+text(x=14, y=xt1[119], labels = "state1",col="black")
+text(x=14, y=xt2[119], labels = "state2",col="red")
+```
+
+## Fit a regression to the observed RSV cases
+
+Because now we only observe part of the epidemic, we cannot use the harmonic regression to fit what we observe. Instead, we use p-spline regression, a generalized additive model. Please check out [Smooth terms in GAM](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.terms.html), [P-splines in GAMs](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.construct.ps.smooth.spec.html) and Iris's work on [p-spline inference](https://cran.r-project.org/web/packages/pspline.inference/vignettes/seasonal.html) for introduction.
+
+```{r}
+require(mgcv)
+irregular_model <- gam(cases ~ s(x=time, k=5, bs="ps"),
+                       family=poisson, method="REML", data=data.frame(time=seq(1:12), cases=tail(xt1,12))) 
+# k is knots
+# The value for k set the upper limit on the 
+# wiggliness of the smooth function
+# You can choose the value based on AIC scores as well 
+```
+
+## Comparing the model fit and what we observed
+The dots are what we observed and the line is the model fit
+```{r,fig.dim=c(4, 4)}
+plot(1:12, tail(xt1,12),type="p", xaxt="n",bty="l",
+      ylab="Cases of RSV", xlab="Month(n)", 
+      ylim=range(c(xt1,xt2)),
+     xlim=c(0,12))
+lines(1:12,fitted(irregular_model))
+```
+
+## Function to calculate the first and second derivatives
+```{r}
+deriv <- function(x, y) diff(y) / diff(x) # function to calculate derivative
+middle_pts <- function(x) x[-1] - diff(x) / 2 # function to assist derivative calculation
+```
+
+```{r}
+#install.packages("pspline.inference")
+library(pspline.inference)
+t <- seq(0.5,12,0.01)
+dtime <- seq(0.5,12,0.01)
+
+# we use Iris's package to get the uncertainty interval
+# of disease trajectory. 
+data=pspline.sample.timeseries(irregular_model, data.frame(time=t), pspline.outbreak.cases, samples=1)
+
+deriv.pred = data.frame(deriv=diff(data$cases)/diff(data$time),time=c(1:length(diff(t)))) # calculate the first derivative
+```
+
