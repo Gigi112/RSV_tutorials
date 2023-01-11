@@ -60,7 +60,7 @@ Please check out:
 \
 -  Ginny's class: Quantitative Methods in Infectious Diseases
 
-$$X_t=\mu+R\cos(2\pi ft+d)+e_t$$
+$$X_t=\mu+R\cos(2\pi ft-d)+e_t$$
 Where 
 \
 $X_t$ is the time-series contains a periodic (cyclic) component.
@@ -91,7 +91,7 @@ amp2=2 # low amplitude
 xt1a=amp1*cos(2*3.14159*t*freq)
 
 #other series shifted by 2 months
-xt2a=amp2*cos(2*3.14159*t*freq+1)
+xt2a=amp2*cos(2*3.14159*t*freq-1)
  
 #Simulate some poisson count data
 xt1=rpois(n,exp((1+xt1a)))
@@ -212,3 +212,28 @@ amp12_xt2<-sqrt(beta_sin12_xt2^2+
 
 amp12_xt2 #True value=2
 ```
+
+## Calculate phase of the 12 month period in state1 and state2
+
+```{r}
+# Phase angle
+phase12_xt1 <- -atan(beta_sin12_xt1/beta_cos12_xt1)
+phase12_xt1
+# True value = 0
+phase12_xt2 <- -atan(beta_sin12_xt2/beta_cos12_xt2)
+phase12_xt2
+# True value = 1
+```
+
+## Calculate peak timing in month in state1 and state2
+
+```{r}
+# Average peak timing
+12*(1-phase12_xt1/(2*pi)) # True value = 0 month 
+12*(1-phase12_xt2/(2*pi)) # True value = 2 month
+```
+**Note: the period is 12 month** 
+- Therefore, peak timing of 12.06 month (year 1) equal to peak timing of 0.06 month (year 0)
+\
+\
+- peak timing of 13.93 month (year 1) equals to 1.93 month (year 0)
