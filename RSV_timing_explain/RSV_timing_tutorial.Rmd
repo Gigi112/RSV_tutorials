@@ -286,21 +286,195 @@ lines(1:12,fitted(irregular_model))
 ```
 
 ## Function to calculate the first and second derivatives
-```{r}
-deriv <- function(x, y) diff(y) / diff(x) # function to calculate derivative
-middle_pts <- function(x) x[-1] - diff(x) / 2 # function to assist derivative calculation
-```
 
 ```{r}
+deriv <- function(x, y) diff(y) / diff(x) 
+# function to calculate derivative
+
+middle_pts <- function(x) x[-1] - diff(x) / 2 
+# function to assist derivative calculation
+```
+
+```{r, echo=T,message=FALSE}
 #install.packages("pspline.inference")
+# require did not work for this package
 library(pspline.inference)
+require(dplyr)
+
 t <- seq(0.5,12,0.01)
 dtime <- seq(0.5,12,0.01)
-
-# we use Iris's package to get the uncertainty interval
-# of disease trajectory. 
-data=pspline.sample.timeseries(irregular_model, data.frame(time=t), pspline.outbreak.cases, samples=1)
-
-deriv.pred = data.frame(deriv=diff(data$cases)/diff(data$time),time=c(1:length(diff(t)))) # calculate the first derivative
 ```
 
+## Find uncertainty interval of disease trajectory and onset timing 
+
+\scriptsize
+```{r}
+# we use Iris's package to get the uncertainty interval of disease trajectory. 
+cases.samples=pspline.sample.timeseries(
+  irregular_model, data.frame(time=t), 
+  pspline.outbreak.cases, samples=150)
+
+onset.samples = cases.samples %>% 
+  group_by(pspline.sample) %>% # for each sample do the following
+  do((function(data){
+    deriv.pred = data.frame(deriv=diff(data$cases)/diff(data$time),
+                            time=c(1:length(diff(t))))
+    # calculate the first derivative
+  
+    second_d <- data.frame(second.deriv=deriv(middle_pts(dtime),deriv(dtime,data$cases)),
+      time=c(1:(length(diff(t))-1))) # calculate the second derivative
+                           
+    indicator = deriv.pred[which(deriv.pred$deriv>0),] 
+    # only look at second derivatives in the increasing segment (first derivative>0 )
+    second_d_test <- second_d[second_d$time%in%indicator$time,]
+    
+    onset = dtime[second_d_test$time[second_d_test$second.deriv==
+        max(second_d_test$second.deriv)]] 
+# find when the second derivative of  the smooth functions reached its maximum 
+    data.frame(
+      onset = onset,
+      cases = data$cases[which(data$time==onset)]) 
+    # find the number of RSV 
+    # when the second derivative reach its maximum
+  })(.))
+```
+
+
+## Plot the range of the onset on top of the epidemic curves
+
+The dots are what we observed and the grey lines are the fitted epidemic curves. The blue area are the 95% confidence interval of epidemic onsets and the vertical dotted line shows the mean of the epidemic onset estimate.
+```{r, message=FALSE,echo=FALSE}
+require(ggplot2)
+# observation data
+Epi_data=data.frame(cases=tail(xt1,12),
+                    time=1:12)
+
+names(cases.samples)[3]="cases"
+# change the the default column name 
+
+ggplot() + 
+  geom_line(data=cases.samples,aes(x=time,y=cases,group = pspline.sample),alpha = .2,color="grey")+ # plot fitted epidemic curves
+  geom_point(data=Epi_data,aes(x=time,y=cases)) + # plot observed case number
+geom_vline(xintercept=median(onset.samples$onset),
+           linetype="dotted",size=0.2)+ # plot median of the epidemic onset estimate
+  annotate("rect", xmin = quantile(onset.samples$onset,0.025),
+           xmax = quantile(onset.samples$onset,0.975), 
+           ymin = 0, ymax = Inf,
+        alpha = .2,fill="blue")+ # show the 95% confidence interval of epidemic onsets
+  theme_classic()
+```
+
+## Plot the onset estimates of state 2.
+
+The estimates show bimodal distribution because we cut through the epidemic season. To correctly analyze the data, we need to limit the time to after the peak of previous outbreak.
+
+```{r, message=FALSE,echo=FALSE}
+irregular_model_2 <- gam(cases ~ s(x=time, k=5, bs="ps"),
+                       family=poisson, method="REML", data=data.frame(time=seq(1:12), cases=tail(xt2,12))) 
+
+cases.samples_2=pspline.sample.timeseries(
+  irregular_model_2, data.frame(time=t), 
+  pspline.outbreak.cases, samples=150)
+
+onset.samples_2 = cases.samples_2 %>% 
+  group_by(pspline.sample) %>% # for each sample do the following
+  do((function(data){
+    deriv.pred = data.frame(deriv=diff(data$cases)/diff(data$time),
+                            time=c(1:length(diff(t))))
+    # calculate the first derivative
+  
+    second_d <- data.frame(second.deriv=deriv(middle_pts(dtime),deriv(dtime,data$cases)),
+      time=c(1:(length(diff(t))-1))) # calculate the second derivative
+                           
+    indicator = deriv.pred[which(deriv.pred$deriv>0),] 
+    # only look at second derivatives in the increasing segment (first derivative>0 )
+    second_d_test <- second_d[second_d$time%in%indicator$time,]
+    
+    onset = dtime[second_d_test$time[second_d_test$second.deriv==
+        max(second_d_test$second.deriv)]] 
+# find when the second derivative of  the smooth functions reached its maximum 
+    data.frame(
+      onset = onset,
+      cases = data$cases[which(data$time==onset)]) 
+    # find the number of RSV 
+    # when the second derivative reach its maximum
+  })(.))
+
+# observation data
+Epi_data_2=data.frame(cases=tail(xt2,12),
+                    time=1:12)
+
+names(cases.samples_2)[3]="cases"
+# change the the default column name 
+
+ggplot() + 
+  geom_line(data=cases.samples_2,aes(x=time,y=cases,group = pspline.sample),alpha = .2,color="grey")+ # plot fitted epidemic curves
+  geom_point(data=Epi_data_2,aes(x=time,y=cases)) + # plot observed case number
+geom_vline(xintercept=median(onset.samples_2$onset),
+           linetype="dotted",size=0.2)+ # plot mean of the epidemic onset estimate
+  geom_vline(xintercept=onset.samples_2$onset,
+           linetype="solid",size=0.02)+
+  annotate("rect", xmin = quantile(onset.samples_2$onset,0.1),
+           xmax = quantile(onset.samples_2$onset,0.9), 
+           ymin = 0, ymax = Inf,
+        alpha = .2,fill="blue")+ # show the 80% confidence interval of epidemic onsets
+  theme_classic()
+```
+
+## Retry the analysis for the onset estimates of state 2.
+
+This analysis will work better with weekly data and after the epidemic take off as you will have more data points. 
+
+```{r, message=FALSE,echo=FALSE}
+irregular_model_2 <- gam(cases ~ s(x=time, k=5, bs="ps"),
+                       family=poisson, method="REML", data=data.frame(time=seq(1:11), cases=tail(xt2,11))) 
+
+t <- seq(0.5,11,0.01)
+dtime <- seq(0.5,11,0.01)
+
+cases.samples_2=pspline.sample.timeseries(
+  irregular_model_2, data.frame(time=t), 
+  pspline.outbreak.cases, samples=150)
+
+onset.samples_2 = cases.samples_2 %>% 
+  group_by(pspline.sample) %>% # for each sample do the following
+  do((function(data){
+    deriv.pred = data.frame(deriv=diff(data$cases)/diff(data$time),
+                            time=c(1:length(diff(t))))
+    # calculate the first derivative
+  
+    second_d <- data.frame(second.deriv=deriv(middle_pts(dtime),deriv(dtime,data$cases)),
+      time=c(1:(length(diff(t))-1))) # calculate the second derivative
+                           
+    indicator = deriv.pred[which(deriv.pred$deriv>0),] 
+    # only look at second derivatives in the increasing segment (first derivative>0 )
+    second_d_test <- second_d[second_d$time%in%indicator$time,]
+    
+    onset = dtime[second_d_test$time[second_d_test$second.deriv==
+        max(second_d_test$second.deriv)]] 
+# find when the second derivative of  the smooth functions reached its maximum 
+    data.frame(
+      onset = onset,
+      cases = data$cases[which(data$time==onset)]) 
+    # find the number of RSV 
+    # when the second derivative reach its maximum
+  })(.))
+
+# observation data
+Epi_data_2=data.frame(cases=tail(xt2,11),
+                    time=1:11)
+
+names(cases.samples_2)[3]="cases"
+# change the the default column name 
+
+ggplot() + 
+  geom_line(data=cases.samples_2,aes(x=time,y=cases,group = pspline.sample),alpha = .2,color="grey")+ # plot fitted epidemic curves
+  geom_point(data=Epi_data_2,aes(x=time,y=cases)) + # plot observed case number
+geom_vline(xintercept=median(onset.samples_2$onset),
+           linetype="dotted",size=0.2)+ # plot median of the epidemic onset estimate
+  annotate("rect", xmin = quantile(onset.samples_2$onset,0.025),
+           xmax = quantile(onset.samples_2$onset,0.975), 
+           ymin = 0, ymax = Inf,
+        alpha = .2,fill="blue")+ 
+  theme_classic()
+```
