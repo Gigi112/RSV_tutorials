@@ -1,0 +1,50 @@
+---
+title: "HCUP data"
+author: "ZHE ZHENG"
+date: "2023-01-13"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## File directory and its contents
+
+The parent directory is named **hcup-sid**. Inside of the direcotry you will find:
+
+  - \textcolor{red}{HCUPCode}. It contains the sas codes to read in the asc files from HCUP data.
+  \
+  \
+  - \textcolor{red}{HCUPData}. It contains the original asc data files from the zip files you decompress from CD.
+  \
+  \
+  - \textcolor{red}{ParquetData}. This is the final data files you will use for analysis. Each state has two files. One file contains the core data of all years, including diagnoses, date of birth, date of admission etc. The other file named chgs contains the charges information (useful for cost-effectiveness studies). 
+  \
+  \
+  - \textcolor{red}{SASCode}. These are the codes that Iris and I (Gigi) wrote to convert all the asc files to csv files.
+  \
+  \
+  - \textcolor{red}{SASData}. This contains the output csv files from the SAS program.
+
+## Process to clean the HCUP data
+
+(1) Read in CD. You need to ensure your computer have at least 200G space for storing the data.
+  \
+  \
+(2) Uncompressed the zip files by inputting the passwords for each year and each state.
+  \
+  \
+(3) Copy the asc files to directory \textcolor{red}{HCUPData}.
+  \
+  \
+(4) Run the *sid time series.sas* in \textcolor{red}{SASCode} to run the SAS codes in \textcolor{red}{HCUPCode}. This will load all the asc data into SAS environment. And then run the *ConvertCSV.sas* to convert all data in SAS environment into csv files.
+  \
+  \
+(5) Download R file: https://github.com/Gigi112/MedicareCMSExploration/blob/main/2.CreateParquet_states.Rmd and modify it to convert all csv files to Parquet files.
+  \
+  \
+(6) Modify R file: https://github.com/VA-CareDisruptions/MedicareCMSExploration/blob/main/1.%20exploratory%20analyses.Rmd to analyze parquet data in R environment.
+
+
+
