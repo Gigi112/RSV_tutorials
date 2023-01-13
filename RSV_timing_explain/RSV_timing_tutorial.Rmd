@@ -26,10 +26,10 @@ knitr::include_graphics(path = "Epidemics_conference.pdf")
 
 ## Outline
 
-- In section 1, we will first introduce how to find the peak timing of RSV epidemics using harmonic regression (given regular annual/biennial seasonality). We will then talk about identifying the onset of RSV epidemics using second derivative method, regardless of the seasonality of RSV.
+- In section 1, we will first introduce how to find the peak timing of RSV epidemics using harmonic regression (given regular annual/biennial seasonality). We will learn how to use R to identify peak timing of periodic RSV epidemics.
 \
 \
-- In section 2, we will learn how to use R to identify peak timing and onset of RSV epidemics.
+- In section 2, we will then talk about identifying the onset of RSV epidemics using second derivative method, regardless of the seasonality of RSV.  
 \
 \
 - In section 3, we will incorporate the spatial component of RSV epidemics. We will first introduce the concept of spatial autocorrelation and then lean to use R to account for spatial autocorrelation.
@@ -57,9 +57,11 @@ Relevant readings:
 - [Disease outbreak outcome estimation using penalized splines](https://cran.r-project.org/web/packages/pspline.inference/vignettes/seasonal.html)
 
 
-## Harmonic regression to estimate the peak timing of RSV epidemics
+## Section 1: Harmonic regression to estimate the peak timing of RSV epidemics
 
-**Note: Most of the following materials came from Dan and Ginny's Lecture notes abd Harmonic Regression by NCSS^[https://www.ncss.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Harmonic_Regression.pdf].**
+\small
+
+**Note: Most of the following materials came from Dan and Ginny's Lecture notes and Harmonic Regression by NCSS^[https://www.ncss.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Harmonic_Regression.pdf].**
 
 Please check out:
 
@@ -245,7 +247,7 @@ phase12_xt2
 \
 - peak timing of 13.93 month (year 1) equals to 1.93 month (year 0)
 
-## Identify the onset of an epidemic using the second derivative method
+## Section 2: Identify the onset of an epidemic using the second derivative method
 
 When we look at the pseudo-RSV cases in the last 12 months, it is hard to determine when is the onset by eyes.
 
@@ -260,6 +262,18 @@ axis(1, at = seq(0,12,1))
 text(x=14, y=xt1[119], labels = "state1",col="black")
 text(x=14, y=xt2[119], labels = "state2",col="red")
 ```
+
+## So what are the methods to identify epidemic onsets?
+
+The most common way is fixed-value thresholds based on the number of cases defined by researchers. For example, in Dr. Rachel Baker's paper^[Baker, R.E., Mahmud, A.S., Wagner, C.E. et al. Epidemic dynamics of respiratory syncytial virus in current and future climates. Nat Commun 10, 5512 (2019).], they defined onset as when the normalized mean RSV incidence per week exceeds 0.2. However, this type of threshold is based on the assumption that the threshold "... will be low enough to constitute onset but high enough to exceed random fluctuations in the data...". It generally works well but it requires extensive knowledge of the epidemic curves in different locations to define this value. Therefore, we introduce a new method, second derivative, to estimate the onset of an outbreak.
+
+## Theoretical background on first and second derivative
+
+::: columns
+
+:::: {.column width="25%"}
+
+![Observed curve, first derivative, and second derivative](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/RSV_timing_explain/Representative-smoothed-reflectance-first-derivative-and-second-derivative-data.png)
 
 ## Fit a regression to the observed RSV cases
 
