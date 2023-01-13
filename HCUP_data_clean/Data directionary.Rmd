@@ -26,6 +26,11 @@ The parent directory is named **hcup-sid**. Inside of the direcotry you will fin
   \
   \
   - \textcolor{red}{SASData}. This contains the output csv files from the SAS program.
+    \
+  \
+  - \textcolor{red}{Rcode}. This contains the R codes to convert csv files to Parquet files. It also contains the R codes to run exploratory analyses using Parquet data.
+    \
+  \
 
 ## Process to clean the HCUP data
 
@@ -41,10 +46,10 @@ The parent directory is named **hcup-sid**. Inside of the direcotry you will fin
 (4) Run the *sid time series.sas* in \textcolor{red}{SASCode} to run the SAS codes in \textcolor{red}{HCUPCode}. This will load all the asc data into SAS environment. And then run the *ConvertCSV.sas* to convert all data in SAS environment into csv files.
   \
   \
-(5) Download R file: https://github.com/Gigi112/MedicareCMSExploration/blob/main/2.CreateParquet_states.Rmd and modify it to convert all csv files to Parquet files.
+(5) Within \textcolor{red}{Rcode}, run R code *0_2.CreateParquet_states.Rmd* and modify it to convert all csv files to Parquet files.
   \
   \
-(6) Modify R file: https://github.com/VA-CareDisruptions/MedicareCMSExploration/blob/main/1.%20exploratory%20analyses.Rmd to analyze parquet data in R environment.
+(6) Within \textcolor{red}{Rcode}, modify R code *1_2.exploratory analyses.Rmd* to analyze parquet data in R environment.
 
 
 
