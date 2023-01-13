@@ -271,18 +271,39 @@ The most common way is fixed-value thresholds based on the number of cases defin
 
 ::: columns
 
-:::: {.column width="25%"}
+:::: {.column width="35%"}
 
 ![Observed curve, first derivative, and second derivative](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/RSV_timing_explain/Representative-smoothed-reflectance-first-derivative-and-second-derivative-data.png)
+
+::::
+
+:::: {.column width="5%"}
+
+::::
+
+:::: {.column width="60%"}
+
+ \small
+
+The figure shows the relationship among the observed curve, the first derivative of the observed curve, and the second derivative of the observe curve."Peak in the first derivative curve identify the location of the red edge. Peak in the second derivative identify the edge of the red edge."^[\tiny Randy M Hamilton et al. (2009). Pre-visible Detection of Grub Feeding in Turfgrass using Remote Sensing. Photogrammetric Engineering & Remote Sensing. 75. 179-192. 10.14358/PERS.75.2.179.]
+\
+\
+When the first derivative is positive, the original curve is increasing. In epidemic, this corresponds to the early stage of an outbreak as cases are increasing. When the second derivative reach its maximum in the segment that the first derivative is positive, it means that the growth rate of the increasing trend reach its maximum. This fits for the definition of the starting point of an disease outbreak.   
+
+::::
+
+:::
 
 ## Fit a regression to the observed RSV cases
 
 Because now we only observe part of the epidemic, we cannot use the harmonic regression to fit what we observe. Instead, we use p-spline regression, a generalized additive model. Please check out [Smooth terms in GAM](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.terms.html), [P-splines in GAMs](https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.construct.ps.smooth.spec.html) and Iris's work on [p-spline inference](https://cran.r-project.org/web/packages/pspline.inference/vignettes/seasonal.html) for introduction.
 
-```{r}
+```{r,message=FALSE}
 require(mgcv)
 irregular_model <- gam(cases ~ s(x=time, k=5, bs="ps"),
-                       family=poisson, method="REML", data=data.frame(time=seq(1:12), cases=tail(xt1,12))) 
+                       family=poisson, method="REML",
+                       data=data.frame(time=seq(1:12),
+                                  cases=tail(xt1,12))) 
 # k is knots
 # The value for k set the upper limit on the 
 # wiggliness of the smooth function
