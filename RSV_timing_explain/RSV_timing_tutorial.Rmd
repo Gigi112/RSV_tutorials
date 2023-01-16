@@ -30,9 +30,6 @@ knitr::include_graphics(path = "Epidemics_conference.pdf")
 \
 \
 - In section 2, we will then talk about identifying the onset of RSV epidemics using second derivative method, regardless of the seasonality of RSV.  
-\
-\
-- In section 3, we will incorporate the spatial component of RSV epidemics. We will first introduce the concept of spatial autocorrelation and then lean to use R to account for spatial autocorrelation.
 
 ## References
 
