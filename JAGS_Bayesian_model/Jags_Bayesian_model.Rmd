@@ -202,26 +202,72 @@ The state-specific intercepts, $\alpha_{0i}=\beta_0+\boldsymbol{x_i^T \lambda}+\
 \
 $\theta_i$ represents a spatially correlated random effect, which we will learn more in detail later.
 
-## Corresponding model structure without considering spatial autocorrelation
+## Jags model code without considering spatial autocorrelation
 
 ```{r}
 Nospatial_model <- "model{
+################ model ####################################
 for(i in 1:n){
-Z[i] ~ dnorm(mu[i], inv_var)
- mu[i] <- (beta0+x1[i]*lambda1+x2[i]*lambda2+lambda3*x3[i])+(beta1+x1[i]*theta1+x2[i]*theta2+theta3*x3[i])*log_W[i]
+Y[i] ~ dnorm(mu[i], inv_var)
+ mu[i] <- alpha_0[i] + beta1*log_Z[i]
+ # log_Z is the log transform average relative timing of RSV  
+
+alpha_0[i]= beta0+x1[i]*lambda1+x2[i]*lambda2+lambda3*x3[i]
+# this is alpha_0i = beta0 + X_i*lambda (coviariates)
 }
 
+################ priors ####################################
 beta0~dnorm(0,0.0001)
 beta1~dnorm(0,0.0001)
 lambda1~dnorm(0,0.0001)
 lambda2~dnorm(0,0.0001)
 lambda3~dnorm(0,0.0001)
-theta2~dnorm(0,0.0001)
-theta1~dnorm(0,0.0001)
-theta3~dnorm(0,0.0001)
 
-inv_var ~ dgamma(0.01, 0.01)
-}
-"
+inv_var ~ dgamma(0.01, 0.01)}"
 ```
 
+## Load the data and run the jags model to sample posteriors  
+
+```{r,eval=FALSE}
+## loading data from the working directory
+data <- readRDS("./Nospatial_model.rds")
+
+### Read in the model file using the jags.model function ##
+non_spatial <- jags.model(textConnection(Nospatial_model),
+                     data=data,n.chains = 4)
+
+############ burn-in period ############
+update(non_spatial,10000)
+
+######## sample for posterior distribution ##########
+non_spatial_sample <- coda.samples(non_spatial,c("beta0","beta1",
+                            "lambda1","lambda2",
+                            "lambda3","inv_var"),
+                             100000,thin=20)
+```
+
+## Summarize the posterior distribution
+
+```{r,eval=FALSE}
+summary(non_spatial_sample)
+```
+
+## Check for model convergence (gelman diagnostic)
+
+```{r,eval=FALSE}
+gelman.diag(non_spatial_sample)
+```
+
+## Trace plots
+
+```{r,eval=FALSE}
+par(mfrow=c(3,2))
+traceplot(non_spatial_sample)
+```
+
+## Density plot of the posterior distributions
+
+```{r,eval=FALSE}
+par(mfrow=c(3,2))
+densplot(non_spatial_sample)
+```
