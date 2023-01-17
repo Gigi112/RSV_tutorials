@@ -30,7 +30,7 @@ In this tutorial, we will learn how to use JAGS (Just Another Gibbs Sampler) in 
 In the first section, we will introduce a simple jags model to help understand the syntax for rjags package.
 \
 \
-In the second section, we will learn how to build up complicated models step by step (censor data and spatial autocorrelation). Before reading this section, you will need to familiar yourself with the RSV_timing_explain tutorials and a research article on the [relative RSV timing]( https://doi.org/10.1111/irv.12965)
+In the second section, we will learn how to build up complicated models step by step (censor data and spatial autocorrelation). Before reading this section, you will need to familiar yourself with the RSV_timing_explain tutorials and a research article on the [relative RSV timing](https://doi.org/10.1111/irv.12965)
 
 ## Example 1: a simple jags model to estimate the unknown parameters
 
@@ -182,5 +182,46 @@ abline(v=5)  # True value
 ```{r}
 denplot(model_sample, parms = c("beta1"))
 abline(v=3.2) # True value
+```
+
+## Section 2: estimate the parameters for the relative RSV timing
+
+After we estimated the [RSV timing](https://doi.org/10.1111/irv.12965) using second derivative method (please check: RSV_timing_explain), we would like to know if some potential drivers contribute to the relative timing difference in RSV epidemic onsets before and during COVID-19 pandemic.
+
+The model is given as: 
+$$Y_i=\alpha_{0i}+\beta_1\overline{Z_i}+\epsilon_i$$
+$$\alpha_{0i}=\beta_0+\boldsymbol{x_i^T \lambda}+\theta_i$$
+
+## Meaning of the variables and parameters
+
+where $Y_i$ is the relative timing of RSV epidemic onset with respect to Florida in 2021 in state $i$ (measured in weeks), and $\overline{Z_i}$ is the average relative timing of RSV seasons in state $i$ compared to Florida from 2016-2019. The global intercept parameter $\beta_0$ and slope parameter $\beta_1$ describe the overall similarity between a typical year’s relative onset timing across all states and the relative timings observed in 2021. The observation-level random effect $\epsilon_i  ~ N(0,\sigma^2)$ accounts for residual variability in the data.
+\
+\
+The state-specific intercepts, $\alpha_{0i}=\beta_0+\boldsymbol{x_i^T \lambda}+\theta_i$, represent the state-level similarity in relative timing for 2021 compared to previous seasons, where $x_i$ is the vector of covariates that could potentially explain differences in the relative timing of RSV between 2021 and previous years. The covariates include population density, average household size, and stringency index of non-pharmaceutical interventions against COVID-19. 
+\
+\
+$\theta_i$ represents a spatially correlated random effect, which we will learn more in detail later.
+
+## Corresponding model structure without considering spatial autocorrelation
+
+```{r}
+Nospatial_model <- "model{
+for(i in 1:n){
+Z[i] ~ dnorm(mu[i], inv_var)
+ mu[i] <- (beta0+x1[i]*lambda1+x2[i]*lambda2+lambda3*x3[i])+(beta1+x1[i]*theta1+x2[i]*theta2+theta3*x3[i])*log_W[i]
+}
+
+beta0~dnorm(0,0.0001)
+beta1~dnorm(0,0.0001)
+lambda1~dnorm(0,0.0001)
+lambda2~dnorm(0,0.0001)
+lambda3~dnorm(0,0.0001)
+theta2~dnorm(0,0.0001)
+theta1~dnorm(0,0.0001)
+theta3~dnorm(0,0.0001)
+
+inv_var ~ dgamma(0.01, 0.01)
+}
+"
 ```
 
