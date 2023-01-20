@@ -367,6 +367,101 @@ Prof. Duncan Lee has developed many statistical tools and tutorials to help eval
 
 - [Spatio-Temporal Areal Unit Modeling in R with Conditional Autoregressive Priors Using the CARBayesST Package](./Spatio-Temporal Areal Unit Modeling in R with Conditional Autoregressive Priors Using the CARBayesST Package.pdf)
 
+## A generalized linear mixed effect model (GLMM) framework
+
+To produce accurate estimates of disease incidence, statistical models must take into account the full range of features present in the data, including non-normal distributions of count data, the impact of explanatory variables, and spatial correlation. One solution is to utilize generalized linear mixed models (GLMMs), which integrate a generalized linear model (GLM) with normally distributed random effects that account for both spatial correlation and overdispersion.
+\
+\
+An example model structure is given as:
+$$Y_i \sim Poisson (\mu_i)$$
+$$\log \mu_i= \log E_i+x_i^\prime \alpha+\phi_i$$
+where $Y_i$ is the observed number of disease in region $i$, $\mu_i$ is the  conditional mean, $E_i$ is the expected number of disease in region $i$, $x_i$ is the explanatory variables (covariates) of region $i$, $\alpha$ is the coeffiecients of the corresponding explanatory variables, and $\phi_i$ accounts for the random effects, which can be spatially correlated.
+
+## Conditional autoregressive (CAR) priors for spatial modeling
+
+To model spatial autocorrelation, four CAR priors are commonly used, including the intrinsic models, BYM models, Leroux models, and Cressie models. In [**Duncan Lee's paper**](https://www.sciencedirect.com/science/article/pii/S1877584511000049?via%3Dihub), he systematically compared these four different priors and concluded that Leroux model is the best from both theoretical and practical standpoints. For short, Leroux model is appealing because it uses a single set of random effects to model the varying strengths of spatial autocorrelation $\rho$, where $\rho=0$ means spatially independent while $\rho$ near 1 indicates strong spatial correlation. 
+
+
+## Leroux priors for spatial modeling
+
+The Leroux version of spatial random effects is given as:
+$$\phi_i | \boldsymbol{\phi_{-i}},\rho,\tau^2 \sim MVN (\frac{\rho\sum_{j=1}^nw_{ij}\phi_i}{\rho\sum_{j=1}^nw_{ij}+1-\rho},\frac{\tau^2}{\rho\sum_{j=1}^nw_{ij}+1-\rho})$$
+where $\rho \in [0,1)$ represents the spatial correlation that was estimated from the data; $\rho=0$ corresponds to spatial independence, simplifying the model to an independent random effects model, and $\rho$ near 1 indicates strong spatial correlation. The $w_{ij}$ are variables that contain information about spatial proximity between two locations; $w_{ij}$ equals one if regions i and j share a common border and equal zero otherwise ($w_{ii}$=0 for all i). The total variance of spatial random effects is described by $\tau^2$.
+
+## Create a spatial adjacency matrix 
+###  Step 1. Set up -- Shapefiles
+
+(I learned this from Kayoko Shioda!)
+
+```{r,message=FALSE,warning=FALSE}
+# Load a shapefile. Make sure each polygon on shapefile  
+# corresponds to only one state. 
+require(rgdal) # for working with shapefiles
+require(ggplot2) # for plot and fortify
+CT1map = readOGR(dsn=path.expand('./WGS84'), layer= 'zipct_37800_0000_2010_s100_census_1_shp_wgs84')
+CTmap.df <- as.data.frame(CT1map)
+CT1map_fort <- fortify(CT1map,region="ZCTA5CE10")
+# ZCTA5CE10 is CT zipcode ID
+# The ID variable is then the zipcode/area unit 
+CT1map_fort$zipcode <- CT1map_fort$id
+
+# Sort both the shapefile and the data file by ID.
+# This is the most important step
+CTmap.sort <- CT1map[order(CT1map$ZCTA5CE10),]
+```
+
+## How to create a spatial adjacency matrix 
+
+###  Step 2. Create a neighbor matrix from the sorted shapefile 
+```{r,message=FALSE}
+library(spdep) # for neighbor evaluation 
+
+# Neighbors can either be Queen 
+# (any zip that touches another zip - even at corners) 
+# or Rook neighbors (share full sides -- not corners)
+
+# The snap dist is governing the NA in neighbor matrix
+# Can remove SNAP statement; 
+# if Queen = F then single point touch not allowed 
+# and Rook distance used.
+
+# When data is missing -- there's more non-zero links involved 
+# Try to make snap distance as small as possible 
+# while making sure all zipcode have at least one neighbor
+neighb <- poly2nb(CTmap.sort, queen = T, snap = sqrt(0.001))
+
+# Check average number of links -- increase snap distance 
+# if it says there is a zip with zero neighbors
+neighb # Avg Number of links = 8.18705 
+
+# Make neighbor matrix 
+# if zero.policy FALSE stop with error for any empty neighbour sets, 
+# if TRUE permit the weights list to be formed with zero-length weights vectors
+# B is the basic binary coding, W is row standardised (both are commonly used)
+neighb.mat <- nb2mat(neighb, zero.policy = T, style = 'B')
+```
+
+## How to create a spatial adjacency matrix 
+
+###  Step 3. Create a W matrix for Leroux model 
+```{r,message=FALSE}
+# For Leroux model, neighbor matrix needs to have 0 
+# if not neighboring, -1 if neighbor, 
+# and number of neighbors for each zip on diagonal), so...
+w.mat <- ifelse(neighb.mat==1,-1,neighb.mat)
+num.neigh <- colSums(neighb.mat) 
+# Count the number of neighbors for each state
+for (i in 1:nrow(w.mat)) {
+  # Put the number of neighbors on diagonal
+  for (j in 1:ncol(w.mat)) {
+    if (i==j) {
+      w.mat[i,j] <- num.neigh[i]
+    }
+  }
+}
+```
+
+
 ## Spatial model with censored data
 ```{r, eval=FALSE}
 censor_spatial_model <- "model{
