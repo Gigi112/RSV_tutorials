@@ -314,6 +314,10 @@ alpha_0[i]= beta0+x1[i]*lambda1+x2[i]*lambda2
 ## Model structure for right censored survival analysis (continued)
 
 ```{r, eval=FALSE}
+"model{# delete this one line of code
+# when combine the two chunks. Separating the
+# codes helps to show them in slides
+
 ################ priors ####################################
 beta0~dnorm(0,0.0001)
 beta1~dnorm(0,0.0001)
@@ -347,4 +351,55 @@ censor_model_sample <- coda.samples(censor_model_jags,
 ```
 
 ## Section 3: spatial autocorrelation
+
+Very often, the disease incidence is not randomly distributed across space. Observations in nearby localities tend to be more similar than observations further away, also known as positive spatial autocorrelation. 
+\
+\
+Prof. Duncan Lee has developed many statistical tools and tutorials to help evaluate spatial autocorrelation in public health. Please refer to the following materials to have an complete overview on Bayesian spatial model for public health and choosing conditional autoregressive priors: 
+\
+\
+
+- [Bayesian Disease Mapping for Public Health](./Bayesian Disease Mapping for Public Health)
+
+- [Overview of Spatial Incidence Models](https://atlas.cancer.org.au/developing-a-cancer-atlas/Chapter_5.html)
+
+- [CARBayes: An R Package for Bayesian Spatial Modeling with Conditional Autoregressive Priors](./CARBayes: An R Package for Bayesian Spatial Modeling with Conditional Autoregressive Priors.pdf)
+
+- [Spatio-Temporal Areal Unit Modeling in R with Conditional Autoregressive Priors Using the CARBayesST Package](./Spatio-Temporal Areal Unit Modeling in R with Conditional Autoregressive Priors Using the CARBayesST Package.pdf)
+
+## Spatial model with censored data
+```{r, eval=FALSE}
+censor_spatial_model <- "model{
+for(i in 1:n){
+is.censor[i] ~ dinterval(Z[i],t.cen)
+Z[i] ~ dlnorm(mu[i], inv_var)
+ mu[i] <- beta0[i] + beta1*log_W[i]
+} 
+
+beta0[1:n] ~ dmnorm(intercepts, Leroux)
+ for(i in 1:n){
+ intercepts[i] <- b0+x1[i]*b1+x2[i]*b2}
+
+beta1~dnorm(0,0.0001)
+
+b0~dnorm(0,0.0001)
+b1~dnorm(0,0.0001)
+b2~dnorm(0,0.0001)
+```
+
+## Spatial model with censored data (continued)
+```{r, eval=FALSE}
+"model{# delete this one line of code
+# when combine the two chunks. Separating the
+# codes helps to show them in slides
+
+Leroux <- inv.tau*(rho*w.mat + (1 - rho)*Id.mat) 
+# calculate spatial correlated random effects
+  inv.tau ~ dgamma(0.01, 0.01) 
+# note the w.mat here is equal to 
+# diag(rowSums(neighbors_mat)) - neighbors_mat
+
+  rho~ dunif(0,1)
+inv_var ~ dgamma(0.01, 0.01)}"
+```
 
