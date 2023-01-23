@@ -393,29 +393,29 @@ where $\rho \in [0,1)$ represents the spatial correlation that was estimated fro
 
 (I learned this from Kayoko Shioda!)
 
-```{r,message=FALSE,warning=FALSE}
+```{r message=FALSE,warning=FALSE}
 # Load a shapefile. Make sure each polygon on shapefile  
 # corresponds to only one state. 
 require(rgdal) # for working with shapefiles
 require(ggplot2) # for plot and fortify
-CT1map = readOGR(dsn=path.expand('./WGS84'), layer= 'zipct_37800_0000_2010_s100_census_1_shp_wgs84')
+CT1map = readOGR(dsn=path.expand('./WGS84'), 
+layer= 'zipct_37800_0000_2010_s100_census_1_shp_wgs84')
 CTmap.df <- as.data.frame(CT1map)
 CT1map_fort <- fortify(CT1map,region="ZCTA5CE10")
 # ZCTA5CE10 is CT zipcode ID
 # The ID variable is then the zipcode/area unit 
 CT1map_fort$zipcode <- CT1map_fort$id
-
-# Sort both the shapefile and the data file by ID.
-# This is the most important step
-CTmap.sort <- CT1map[order(CT1map$ZCTA5CE10),]
 ```
 
 ## How to create a spatial adjacency matrix 
 
-###  Step 2. Create a neighbor matrix from the sorted shapefile 
+###  Step 2. Find the number of neighbors from the sorted shapefile  
 ```{r,message=FALSE}
-library(spdep) # for neighbor evaluation 
+# Sort both the shapefile and the data file by ID.
+# This is the most important step
+CTmap.sort <- CT1map[order(CT1map$ZCTA5CE10),]
 
+library(spdep) # for neighbor evaluation 
 # Neighbors can either be Queen 
 # (any zip that touches another zip - even at corners) 
 # or Rook neighbors (share full sides -- not corners)
@@ -429,21 +429,29 @@ library(spdep) # for neighbor evaluation
 # Try to make snap distance as small as possible 
 # while making sure all zipcode have at least one neighbor
 neighb <- poly2nb(CTmap.sort, queen = T, snap = sqrt(0.001))
+```
 
+## How to create a spatial adjacency matrix 
+
+###  Step 3. Create a neighbor matrix with 1 suggesting adjacency 
+```{r,message=FALSE}
 # Check average number of links -- increase snap distance 
 # if it says there is a zip with zero neighbors
 neighb # Avg Number of links = 8.18705 
 
 # Make neighbor matrix 
-# if zero.policy FALSE stop with error for any empty neighbour sets, 
-# if TRUE permit the weights list to be formed with zero-length weights vectors
-# B is the basic binary coding, W is row standardised (both are commonly used)
+# if zero.policy FALSE,
+# stop with error for any empty neighbor sets, 
+# if TRUE, permit the weights list to be
+# formed with zero-length weights vectors
+# B is the basic binary coding, 
+# W is row standardised (both are commonly used)
 neighb.mat <- nb2mat(neighb, zero.policy = T, style = 'B')
 ```
 
 ## How to create a spatial adjacency matrix 
 
-###  Step 3. Create a W matrix for Leroux model 
+###  Step 3. Create the W matrix for Leroux model 
 ```{r,message=FALSE}
 # For Leroux model, neighbor matrix needs to have 0 
 # if not neighboring, -1 if neighbor, 
