@@ -18,7 +18,7 @@ The order of the tutorials was listed as follows:
 
 - Directory 0_HCUP_data_clean. This directory introduces how to convert the State Inpatient/Emergency Department Databases from ACS files to parquet files. With parquet data files, we can easily conduct data analysis using dplyr type of syntax in r. 
 
-- Directory 1_MSIS_model_explain. This directory describes the transmission dynamic model of RSV. It includes background knowledge of compartmental models (a kind of mathematical model), simulation of compartmental models, maximum a posterior/maximum likelihood estimation, STAN programming language for Bayesian analysis of ordinary differential equations. 
+- Directory 1_MSIS_model_explain. This directory describes the transmission dynamic model of RSV. It includes background knowledge of transmission dynamic model of RSV (a kind of mathematical model), simulation of the transmission dynamic model, maximum a posterior/maximum likelihood estimation, STAN programming language for Bayesian analysis of ordinary differential equations. It also introduces how to create contact matrices based on the user-defined age groups and how to run R script on HPC (clusters).
 
 - Directory 2_RSV_timing_explain. This directory demonstrates how to utilize harmonic regression to identify the peak timing of seasonal epidemics and to use the second-derivative method to pinpoint the onset timing of irregular RSV epidemics following the relaxation of mitigation measures against COVID-19 pandemic.
 
@@ -26,4 +26,5 @@ The order of the tutorials was listed as follows:
 
 - Directory 4_RSV_disease_burden. I have not yet worked on this but it will focus on using Hierarchical Bayesian regression to estimate the "true" burden of RSV hospitalizations in older adults.
 
+- Directory 5_roadmaps_future_projects. Road maps for two projects that I have just started: (1) cost-effectiveness of  vaccines against RSV hospitalizations in older adults in the United States and (2) factors affecting maternal RSV vaccine efficacy in clinical trials.
 
