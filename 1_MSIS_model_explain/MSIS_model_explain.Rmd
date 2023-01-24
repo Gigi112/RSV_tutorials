@@ -18,7 +18,22 @@ output:
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## References
+## Section outlines
+\
+- In the first section, we introduces the background knowledge of transmission dynamic models of RSV.
+\
+\
+- In the second section, we will learn how to run transmission model with all parameters known. 
+\
+\
+- In the third section, we will learn to use maximum a posteriori / maximum likelihood estimation (MLE) to estimate the unknown parameters (one value for each unknown parameter). 
+\
+\
+- In the fourth section, we will learn to use STAN, a probabilistic programming language for statistical inference^[https://en.wikipedia.org/wiki/Stan_(software)], to get the 95% credible intervals from the posterior samples of these unknown parameters.   
+
+
+
+## Section 1: prerequisite readings (references)
 
 This age structured transmission dynamic model of RSV was first developed by Ginny Pitzer in her publication: [Environmental Drivers of the Spatiotemporal Dynamics of Respiratory Syncytial Virus in the United States](https://doi.org/10.1371/journal.ppat.1004591). With the help of Dan Weinberger, we translated Ginny's Matlab codes to R codes. We further developed/modified this model, resulting in several mechanistic models corresponding to a variety of scenarios. Please refer to:
 
@@ -281,17 +296,7 @@ heatmap(c2/sum(diag(c2)),
         Rowv=NA, Colv=NA, scale='none', col=nice.cols)
 ```
 
-## Section outlines
-\
-- In the first section, we will learn how to run transmission model with all parameters known. 
-\
-\
-- In the second section, we will learn to use maximum a posteriori / maximum likelihood estimation (MLE) to estimate the unknown parameters (one value for each unknown parameter). 
-\
-\
-- In the third section, we will learn to use STAN, a probabilistic programming language for statistical inference^[https://en.wikipedia.org/wiki/Stan_(software)], to get the 95% credible intervals from the posterior samples of these unknown parameters.   
-
-## Section 1: run transmission model with all parameters known
+## Section 2: run transmission model with all parameters known
 \
 We first assign values to all required parameters, including rates and probabilities. Most of these are described in Table 2 of Pitzer et al, PLOS Pathogens^[https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004591]
 \
@@ -833,7 +838,7 @@ barplot(c(sum(colSums(H1)[1:3]),# 0-2 months
         xlab="age group",ylab="proportion")
 ```
 
-## Section 2: use maximum a posteriori (variation of MLE) to estimate the unknown parameters
+## Section 3: use maximum a posteriori (variation of MLE) to estimate the unknown parameters
 
 In this example, we will use maximum a posteriori to estimate the (1) per capita transmission probability: baseline.txn.rate, (2) seasonal amplitude: Amp, (3) seasonal peak timing: phi, (4) duration of maternal immunity: DurationMatImmunityDays. 
 \
@@ -1032,7 +1037,7 @@ dur_est=exp(fitLL$par)[4]
 # estimations are very similar to model inputs
 ```
  
-## Section 3: Stan model to estimate posterior samples
+## Section 4: Stan model to estimate posterior samples
 
 Before we start, please learn the [Rstan basic](https://github.com/Gigi112/RSV_tutorials/tree/main/1_MSIS_model_explain/Introduction of Rstan.pptx) from the separated tutorials in the same file path. 
 \
