@@ -20,14 +20,12 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## References
 
-This age structured transmission dynamic model of RSV was first developed by Ginny Pitzer in her publication: https://doi.org/10.1371/journal.ppat.1004591. With the help of Dan Weinberger, we translated Ginny's Matlab codes to R codes. We further developed/modified this model, resulting in several mechanistic models corresponding to a variety of scenarios. Please refer to:
+This age structured transmission dynamic model of RSV was first developed by Ginny Pitzer in her publication: [Environmental Drivers of the Spatiotemporal Dynamics of Respiratory Syncytial Virus in the United States](https://doi.org/10.1371/journal.ppat.1004591). With the help of Dan Weinberger, we translated Ginny's Matlab codes to R codes. We further developed/modified this model, resulting in several mechanistic models corresponding to a variety of scenarios. Please refer to:
 
-- https://doi.org/10.1001/jamanetworkopen.2021.41779
-- https://doi.org/10.1038/s41541-022-00550-5
-- https://doi.org/10.1101/2022.11.10.22282132
+- [Estimation of the Timing and Intensity of Reemergence of Respiratory Syncytial Virus Following the COVID-19 Pandemic in the U](https://doi.org/10.1001/jamanetworkopen.2021.41779)
+- [Predicted effectiveness of vaccines and extended half-life monoclonal antibodies against RSV hospitalizations in children](https://doi.org/10.1038/s41541-022-00550-5)
+- [Year-round RSV Transmission in the Netherlands Following the COVID-19 Pandemic - A Prospective Nationwide Observational and Modeling Study](https://doi.org/10.1101/2022.11.10.22282132)
 
-The complete code example for this tutorial please refer to
-- https://github.com/weinbergerlab/RSV_metapop/tree/master/SimpleModel
 
 ## The Compartmental Model Structure (states of transmission dynamics)
 
@@ -37,7 +35,7 @@ The complete code example for this tutorial please refer to
 :::: {.column width="25%"}
 
 
-![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/1_MSIS_model_explain/RSV_msis_model_structure.png)
 
 ::::
 
@@ -60,7 +58,7 @@ The complete code example for this tutorial please refer to
 
 :::: {.column width="25%"}
 
-![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/1_MSIS_model_explain/RSV_msis_model_structure.png)
 \
 
 \small
@@ -94,7 +92,7 @@ The complete code example for this tutorial please refer to
 
 :::: {.column width="25%"}
 
-![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/1_MSIS_model_explain/RSV_msis_model_structure.png)
 
 ::::
 
@@ -121,7 +119,7 @@ The complete code example for this tutorial please refer to
 
 :::: {.column width="25%"}
 
-![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/1_MSIS_model_explain/RSV_msis_model_structure.png)
 ::::
 
 :::: {.column width="75%"}
@@ -146,7 +144,7 @@ The complete code example for this tutorial please refer to
 
 :::: {.column width="25%"}
 
-![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/MSIS_model_explain/RSV_msis_model_structure.png)
+![Ginny's model](/Users/zhezheng/Library/CloudStorage/Box-Box/RSV_tutorials/RSV_tutorials/1_MSIS_model_explain/RSV_msis_model_structure.png)
 
 ::::
 
@@ -1036,7 +1034,7 @@ dur_est=exp(fitLL$par)[4]
  
 ## Section 3: Stan model to estimate posterior samples
 
-Before we start, please learn the [Rstan basic](https://github.com/Gigi112/RSV_tutorials/tree/main/MSIS_model_explain/Introduction of Rstan.pptx) from the separated tutorials in the same file path. 
+Before we start, please learn the [Rstan basic](https://github.com/Gigi112/RSV_tutorials/tree/main/1_MSIS_model_explain/Introduction of Rstan.pptx) from the separated tutorials in the same file path. 
 \
 \
 You will find three code documents inside code_source/stan_code file. age-structureMSIS_deterministic.stan is the stan code contains the ODE function, input data, input parameters, priors and the distribution of posterior distributions. ageMSIS_deterministric_annual.R is the R code that create the interface between stan and R to sample from posterior distribution. msis_wa_D.sh is a file to run the model on cluster. We will start with the stan code.
