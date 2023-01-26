@@ -31,43 +31,53 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Section 1: Background knowledge of estimating disease burden with statistical models.
 
 There are 5 main statistical methods to estimate the hospitalization/mortality attributable to respiratory virus infection. In Dan's class, Public Health Surveillance, he teaches all four methods in details. Here, we will only give a brief introduction to each of the method and provide the link to the initial publications.
-
-1. **Serfling regression**
-
+\
+\
+1. **Serfling regression** 
 
 2. **Periseason differences**
-
 
 3. **Poisson regression with log link**
 
 4. **Negative binomial regression with identity link**
 
-
 5. **Box-Jenkins transfer function**
+
+## Brief introduction to 5 statistical methods for estimating respiratory virus–attributable hospitalization/mortality
+
+1. **Serfling regression** \
+  This type of model identifies the epidemic season and establish a epidemic threshold (seasonal baseline) using historical data. After predicting the expected diseases baseline, observed diseases above the baseline (epidemic threshold) during the epidemic season will be attributable to the viral infection. The basic Serfling regression is given by: $Y_t = \mu+ bt+\sum \alpha_i cos \theta+ \sum \beta_i sin \theta$ where $Y_t$ is the expected hospitalizations at time t. $\mu$ is the baseline. $bt$ captures time trend. $\sum \alpha_i cos \theta+ \sum \beta_i sin \theta$ are for the seasonal variations. Serfling regression is a linear model initially using ordinary least square to fit. [\color{blue} Click to see an R code example](https://kmcconeghy.github.io/flumodelr/articles/04-serfling.html)
+  \
+  \
+2. **Periseason differences**
 
 
 ## Initial publications of the method
 
-1. *Serfling regression*
+1. **Serfling regression**
   - [Methods for Current Statistical Analysis of Excess Pneumonia-influenza Deaths](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1915276/pdf/pubhealthreporig00078-0040.pdf)
   - [The impact of influenza epidemics on mortality: introducing a severity index](https://ajph.aphapublications.org/doi/epdf/10.2105/AJPH.87.12.1944)
   - [Impact of Influenza Vaccination on Seasonal Mortality in the US Elderly Population](https://jamanetwork.com/journals/jamainternalmedicine/article-abstract/486407)
 
-2. *Periseason differences*
+2. **Periseason differences**
   - [The effect of influenza on hospitalizations, outpatient visits, and courses of antibiotics in children](https://www.nejm.org/doi/full/10.1056/nejm200001273420401)
   - [Respiratory illness associated with influenza and respiratory syncytial virus infection](https://adc.bmj.com/content/archdischild/90/7/741.full.pdf)
   - [Influenza and the Rates of Hospitalization for Respiratory Disease among Infants and Young Children](https://www.nejm.org/doi/full/10.1056/nejm200001273420402)
+  - [Impact of influenza and respiratory syncytial virus on mortality in England and Wales from January 1975 to December 1990](https://www.cambridge.org/core/services/aop-cambridge-core/content/view/28087EC2F43E75D1907F15CA3411FE6D/S0950268800058957a.pdf/impact-of-influenza-and-respiratory-syncytial-virus-on-mortality-in-england-and-wales-from-january-1975-to-december-1990.pdf)
 
 ## Initial publications of the method (continued)
 
-3. *Poisson regression with log link*
-  - ()
+3. **Poisson regression with log link**
+  - [Mortality Associated With Influenza and Respiratory Syncytial Virus in the United States](https://jamanetwork.com/journals/jama/article-abstract/195750)
+  - [The Association of Respiratory Syncytial Virus Infection and Influenza with Emergency Admissions for Respiratory Disease in London: An Analysis of Routine Surveillance Data](https://academic.oup.com/cid/article/42/5/640/316492)
 
-4. *Negative binomial regression with identity link*
-  - ()
+4. **Negative binomial regression with identity link**
+  - [Modelling the unidentified mortality burden from thirteen infectious pathogenic microorganisms in infants](https://www.cambridge.org/core/journals/epidemiology-and-infection/article/modelling-the-unidentified-mortality-burden-from-thirteen-infectious-pathogenic-microorganisms-in-infants/26AE7DA522FD6DCE6CE3E4F2D3CB9A79)
+  - [Hospitalization Attributable to Influenza and Other Viral Respiratory Illnesses in Canadian Children](https://journals.lww.com/pidj/fulltext/2006/09000/Hospitalization_Attributable_to_Influenza_and.8.aspx)
 
-5. *Box-Jenkins transfer function*
-  - ()
+5. **ARIMA model**
+  - [Community influenza outbreaks and emergency department ambulance diversion](https://www.sciencedirect.com/science/article/pii/S0196064403013167)
+  - [Time-Series Analysis of the Relation between Influenza Virus and Hospital Admissions of the Elderly in Ontario, Canada, for Pneumonia, Chronic Lung Disease, and Congestive Heart Failure](https://academic.oup.com/aje/article/149/1/85/205393)
 
 
 ## Other useful references
