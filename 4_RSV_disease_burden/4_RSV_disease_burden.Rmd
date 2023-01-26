@@ -23,4 +23,55 @@ knitr::opts_chunk$set(echo = TRUE)
 - Section 2: Background knowledge of Hierarchical Bayesian regression.
 \
 \
-- Section 3: R code for running the Hierarchical Bayesian regression to estimate in older adults by age and risk groups.
+- Section 3: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations.
+\
+\
+- Section 4: R code for running the Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups.
+
+## Section 1: Background knowledge of estimating disease burden with statistical models.
+
+There are 5 main statistical methods to estimate the hospitalization/mortality attributable to respiratory virus infection. In Dan's class, Public Health Surveillance, he teaches all four methods in details. Here, we will only give a brief introduction to each of the method and provide the link to the initial publications.
+
+1. **Serfling regression**
+
+
+2. **Periseason differences**
+
+
+3. **Poisson regression with log link**
+
+4. **Negative binomial regression with identity link**
+
+
+5. **Box-Jenkins transfer function**
+
+
+## Initial publications of the method
+
+1. *Serfling regression*
+  - [Methods for Current Statistical Analysis of Excess Pneumonia-influenza Deaths](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1915276/pdf/pubhealthreporig00078-0040.pdf)
+  - [The impact of influenza epidemics on mortality: introducing a severity index](https://ajph.aphapublications.org/doi/epdf/10.2105/AJPH.87.12.1944)
+  - [Impact of Influenza Vaccination on Seasonal Mortality in the US Elderly Population](https://jamanetwork.com/journals/jamainternalmedicine/article-abstract/486407)
+
+2. *Periseason differences*
+  - [The effect of influenza on hospitalizations, outpatient visits, and courses of antibiotics in children](https://www.nejm.org/doi/full/10.1056/nejm200001273420401)
+  - [Respiratory illness associated with influenza and respiratory syncytial virus infection](https://adc.bmj.com/content/archdischild/90/7/741.full.pdf)
+  - [Influenza and the Rates of Hospitalization for Respiratory Disease among Infants and Young Children](https://www.nejm.org/doi/full/10.1056/nejm200001273420402)
+
+## Initial publications of the method (continued)
+
+3. *Poisson regression with log link*
+  - ()
+
+4. *Negative binomial regression with identity link*
+  - ()
+
+5. *Box-Jenkins transfer function*
+  - ()
+
+
+## Other useful references
+
+- []
+
+- [The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization](https://academic.oup.com/aje/article/170/7/925/91526)
