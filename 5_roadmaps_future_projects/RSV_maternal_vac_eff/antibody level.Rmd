@@ -1,0 +1,243 @@
+---
+title: "Antibodylevel"
+author: "Joukje Willemsen"
+date: '2022-06-07'
+output: html_document
+---
+Parametersettings
+
+```{r}
+library(ggplot2)
+
+
+#Naturally accuring maternal antibdoy levels 
+mab.p <- 13                                              # Maternal antibody level placebo
+# set neutralizing antibody level at 8; seasonal variations in maternal immunity as seem in "Seasonal Variation of Maternally Derived Respiratory Syncytial Virus Antibodies and Association with Infant Hospitalizations for Respiratory Syncytial Virus"
+
+#Fold increase 14 days after vaccination
+factor.v_LME <- 12.17 #fold increase PCA 
+
+#Maternal half-life (days)
+mat.half.time <- 145.58 
+
+
+#Neonatal half-life (days)
+half.time <- 46.9                                  # Antibody half life neonates
+
+
+
+threshold <- 40                                          # Protection threshold literature
+
+#Matrix with potential time of vaccination
+t.vac <- c(22:42)                                        # Weeks of vaccination vector
+
+```
+
+Transfer function - obtained from fitting a regression on published data (see Scheltema et al 2018)
+```{r}
+transfer.function <- function(transfer.vector, gestational.age, ga.vector){
+  
+  exp.model <- lm(log(transfer.vector) ~ gestational.age) # regression exponential
+  
+  summary.exp.model <- summary(exp.model)
+  
+  coef.exp.model <- coef(exp.model) #coefficient
+  
+  return(coef.exp.model)
+}
+
+coef.exp.model <- transfer.function(transfer.vector = c(0.025, 0.1, 0.5, 0.70, 1.5), 
+                                    gestational.age = c(13, 28, 32, 36, 40),
+                                    ga.vector = c(1:42)) 
+```
+
+
+Ab levels mother at time t
+```{r}
+## exponential function
+maternal.ab.level <- function(t.measure, t.vac, 
+                              vac.effect = factor.v_LME, m.ab.base = mab.p){
+  
+  t.since.vac <- t.measure*7 - t.vac*7
+  
+  # before week 1
+  if(t.since.vac < 7) {m.ab.level <- m.ab.base}     
+  
+  # exp between 1 and 2
+  if(t.since.vac >= 7 & t.since.vac < 14) {m.ab.level <- m.ab.base * exp((t.since.vac-7)*(log(vac.effect)/7))}  #new!!! 14 days ipv 21
+  
+  # after week 2
+  if(t.since.vac >= 14) {m.ab.level <- (m.ab.base * vac.effect) * (1/2)^((t.since.vac-14)/(mat.half.time))
+  
+  }
+  
+  return(m.ab.level)
+}
+
+```
+
+Ab levels at time of birth
+```{r}
+#### Cord blood level at time of birth ####
+cord.blood.ab.level <- function(gest.age, t.vac, coef.exp.model = coef.exp.model, vac.effect = factor.v_LME, m.ab.base = mab.p){
+  
+  transfer <- exp(coef.exp.model[1] + coef.exp.model[2] * gest.age)
+  
+  cb.level <- maternal.ab.level(gest.age, t.vac) * transfer
+  
+  return(cb.level)
+}
+
+```
+
+Ab levels after birth
+```{r}
+#### Cord blood level at time of birth ####
+ab.level.afterbirth <- function(t, cb.level){
+  
+ab.level <- cb.level * (1/2)^(t/half.time)
+  
+  return(ab.level)
+}
+
+```
+
+Length protection window
+
+```{r}
+#### Age at threshold - by vaccination time ####
+
+age.function <- function(cb.level, half.time = half.time){
+  
+#   cb.level <- cord.blood.ab.level(gest.age, t.vac, coef.exp.model) #cordblood level
+   
+   exp.age <- (half.time * (log((threshold/cb.level),base = exp(1))))/-log(2, exp(1))
+  # expected age at threshold
+   
+   if(exp.age <= 0){exp.age <- 0} # if expected age is <= 0
+   
+   return(exp.age)
+}
+
+#age.function(40, half.time = half.time)
+```
+
+```{r}
+Antibodysplot <- function(t.vac, gest.age){
+  
+Timeprotected <- age.function(cb.level = cord.blood.ab.level(gest.age = gest.age, t.vac = t.vac, coef.exp.model = coef.exp.model, vac.effect = factor.v_LME, m.ab.base = mab.p), half.time = half.time)
+
+Ma <- c(MaternalAblevels=sapply(c(20:gest.age), FUN = maternal.ab.level, t.vac = t.vac), rep(NA, Timeprotected+2))
+
+Faprebirth <- c(sapply(c(20:gest.age), FUN = cord.blood.ab.level, t.vac = t.vac, coef.exp.model = coef.exp.model, vac.effect = factor.v_LME, m.ab.base = mab.p), rep(NA,Timeprotected+2))
+
+FAafterbirth <- c(rep(NA,gest.age-20), sapply(c(0:(Timeprotected+2)), FUN = ab.level.afterbirth, cb.level = cord.blood.ab.level(gest.age = gest.age, t.vac = t.vac, coef.exp.model = coef.exp.model, vac.effect = factor.v_LME, m.ab.base = mab.p))) 
+  
+df <- data.frame(week=c(20:(gest.age+(Timeprotected+2))), Ma, Faprebirth)
+  
+plot <- ggplot() +
+  geom_rect(aes(fill = 'Protection Window'), xmin=gest.age,
+                  xmax = gest.age+Timeprotected,
+                  ymin = -Inf,
+                  ymax = 40, alpha = .125/2) +
+  geom_line(aes(x = week, y= FAafterbirth, color = "Fetus", linetype = "After birth"), data = df)+
+  geom_line(aes(x=week, y=Ma, color = "Maternal", linetype = "Before birth"), data = df)+
+  geom_line(aes(x=week, y= Faprebirth, color = "Fetus", linetype = "Before birth"), data = df)+
+  geom_vline(xintercept = gest.age, linetype = "dashed")+
+  geom_vline(xintercept = t.vac, linetype = "dashed")+
+  annotate(geom = "text",
+             label = "Tbirth",
+             x = gest.age,
+             y = 50,
+             angle = 360-90, 
+             vjust = -1) +
+   annotate(geom = "text",
+             label = "Tvac",
+             x = t.vac,
+             y = 50,
+             angle = 360-90, 
+             vjust = 1) +
+  ggtitle("Maternal and fetal antibodylevels over time") +
+  xlab("Time since start pregnancy (week)") + ylab("PCA levels") +
+  theme_classic() + 
+  scale_fill_manual(labels = paste(as.character(round(Timeprotected),0), "days"), breaks = "Protection Window", values = "red",
+                    guide = guide_legend(title = "Protection Window",
+                                         override.aes = list(alpha = .5/4)))+
+ scale_x_continuous(breaks = seq(min(df$week),max(df$week),5))
+
+return(plot)
+
+}
+
+Antibodysplot(24, 38)
+
+```
+
+Step 1: Get a matrix of cordblood Ab levels
+```{r}
+
+  gest_age_seq <- seq(24, 44, 1)
+
+  cols <- c("LINE1"="#f04546")
+
+  #Make an empty matrix
+  predicted_ab.matrix <- matrix(NA, nrow = length(gest_age_seq), ncol = length(t.vac))
+  
+  #Make an empty matrix
+  prevented.matrix <- matrix(NA, nrow = length(gest_age_seq), ncol = length(t.vac))
+  
+  for(ga in 1:length(t.vac)){
+  for(case in 1:length(gest_age_seq)){
+  predicted_ab.matrix[case, ga] <-cord.blood.ab.level(gest_age_seq[case], t.vac[ga], coef.exp.model=coef.exp.model, vac.effect=factor.v_LME, m.ab.base = mab.p)}}
+  
+rownames(predicted_ab.matrix) <- gest_age_seq
+colnames(predicted_ab.matrix) <- t.vac
+  
+  
+library(reshape2)
+melted_cormat <- melt(predicted_ab.matrix)
+head(melted_cormat)
+
+library(ggplot2)
+library(tidyverse)
+plotProtWindow <- ggplot(data = melted_cormat %>% filter(value >= 1), aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile(aes(fill = value)) + 
+  geom_text(aes(label = round(value, 0))) +
+  scale_fill_gradient(low = "white", high = "red", limit=c(40,400))+
+  theme_classic()+
+  xlab("Gestational age at time of birth") +
+  ylab("Gestational age at time of vaccination") +
+  scale_x_continuous(breaks = seq(24, 44, 1)) +
+  scale_y_continuous(breaks = t.vac)+ 
+  guides(fill=guide_legend(title="PCA levels at birth"))
+
+plotProtWindow
+```
+
+Step 2: Protetion window per time of vaccination
+```{r}
+predicted_age.matrix <- apply(predicted_ab.matrix, c(1,2), age.function, half.time = half.time)
+```
+
+
+Get a matrix of protection window per time of vaccination x gestational age
+```{r}
+library(reshape2)
+melted_cormat <- melt(predicted_age.matrix)
+head(melted_cormat)
+
+library(ggplot2)
+plotProtWindow <- ggplot(data = melted_cormat %>% filter(value >= 1), aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile(aes(fill = value)) + 
+  geom_text(aes(label = round(value, 0))) +
+  scale_fill_gradient(low = "white", high = "red", limit=c(1,151))+
+  theme_classic()+
+  xlab("Gestational age at time of birth") +
+  ylab("Gestational age at time of vaccination") +
+  scale_x_continuous(breaks = seq(24, 44, 1)) +
+  scale_y_continuous(breaks = t.vac)+ 
+  guides(fill=guide_legend(title="Number of protected days"))
+
+
+plotProtWindow
+```

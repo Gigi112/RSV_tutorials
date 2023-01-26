@@ -1,0 +1,285 @@
+---
+title: "simulate Hospitalizations"
+author: "ZHE ZHENG"
+date: '2022-11-04'
+output: html_document
+---
+
+
+```{r}
+library(deSolve)
+library(RColorBrewer)
+library(reshape2)
+library(dplyr)
+library(stringr)
+```
+In Pitzer et al: The <12 month olds, were divided into monthy age classes. The remaining population was divided into 6 classes: 1–4 years old, 5–9 years, 10–19 years, 20–39 years, 40–59-years, and 60+ years old. In this example, the 1-4 year olds are divided into 12 month age classes as well. 
+```{r}
+#T is N time points; N_ages is number of age groups
+parmset <- readRDS('/Users/zhezheng/Library/CloudStorage/Box-Box/aim3/RSVtransmissionmodel/RSV_metapop/SimpleModel/data_and_parms/parmset.rds')
+Pop1 <- readRDS('/Users/zhezheng/Library/CloudStorage/Box-Box/aim3/RSVtransmissionmodel/RSV_metapop/SimpleModel/data_and_parms/pop1.rds') #intial population
+NL_B <- read.csv("~/Library/CloudStorage/OneDrive-YaleUniversity/SPREAD study/SPREAD/NL_birthrate.csv")
+NL_B <- NL_B[complete.cases(NL_B),]
+NL_B$birthrate <- NL_B$birth/NL_B$Pop
+c2 <- readRDS( '/Users/zhezheng/Library/CloudStorage/Box-Box/aim3/RSVtransmissionmodel/RSV_metapop/SimpleModel/data_and_parms/c2.rds') # contact matrix
+```
+
+#View contact matrix
+```{r}
+n.cols=100
+nice.cols <-  colorRampPalette(brewer.pal(9, "YlOrRd"))(n.cols)
+heatmap(c2/sum(diag(c2)), Rowv=NA, Colv=NA, scale='none', col=nice.cols)
+```
+
+Set names of Age groups 
+```{r}
+N_ages <- length(Pop1) 
+agenames <- paste0('Agegrp', 1:N_ages) #Could replace this with vector of actual age names
+```
+
+```{r}
+###########################################
+# update LRI and hospitalization probability
+###########################################
+al=21
+delta1=c(rep(.40,3),rep(.39,3), rep(.21,3),rep(.20,3),0.16,rep(.14,3),rep(0.05,al-16))#proportion of first infections that are LRI (by age)
+delta2=.5*delta1#proportion of second infectious that are LRI 
+delta3=.7*delta2#proportion of third infections that are LRI
+hosp1=c(.18*rep(.40,3),0.08*rep(.39,3),0.07*rep(.21,3),0.06*rep(.20,3),0.06*0.16,0.05*rep(.14,3),0.02*rep(0.05,al-16))#proportion of first LRIs that are hospitalized
+hosp2=.4*hosp1#proportion of second LRIs that are hospitalized
+hosp3=c(rep(0,al-2),0.00001,0.00004)#proportion of third LRIs that are hospitalized
+
+```
+
+## Population size by time
+```{r}
+p <- sum(Pop1)  # Total population at each time, a vector of length T
+```
+
+## Initialize the compartments (States) 
+```{r}
+StateNames <- c('M','S0','I1','S1','I2','S2','I3','S3','I4')
+States <- array(NA, dim=c(N_ages, length(StateNames) )) #  N age groups xN parameters 
+dimnames(States)[[1]] <- agenames
+dimnames(States)[[2]] <- StateNames
+
+yinit.matrix <- array(NA, dim=c(N_ages, length(StateNames) ))
+
+dimnames(yinit.matrix)[[1]] <- agenames
+dimnames(yinit.matrix)[[2]] <- StateNames
+
+yinit.matrix[,c('S1','I2','S2','I3','S3','I4')]  = 0
+yinit.matrix[,'M'] = c(Pop1[1:6], rep(0,N_ages-6))
+yinit.matrix[,'S0'] = c(rep(0,6),Pop1[7:N_ages]-rep(N_ages-6)) 
+yinit.matrix[,'I1'] = c(rep(0,6), rep(1,N_ages-6))  #initializes with 1 infected person per age group 
+
+yinit.vector <- as.vector(yinit.matrix) #Vectorize the ynit matrix
+
+# Create array that has the labels by age, State and use this to name the yinit.vector
+name.array <- array(NA, dim=dim(yinit.matrix))
+for(i in 1:dim(name.array)[1]){
+  for(j in 1:dim(name.array)[2]){
+      name.array[i,j] <- paste(dimnames(yinit.matrix)[[1]][i],dimnames(yinit.matrix)[[2]][j]  )
+    }
+  }
+
+name.vector <- as.vector(name.array)
+names(yinit.vector) <- name.vector
+
+```
+
+
+## Read in model and parameters
+
+```{r}
+source("~/Library/CloudStorage/Box-Box/immuno-epi/Rcode/immuno_epi_model.R") #Read in the model
+```
+
+##Settings parameters
+Most of these are described in Table 2 of Pitzer et al, PLOS Pathogens: https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004591
+
+For birth rate:
+The weekly per capita birth rate (B_w) is equal to log(1+B)/52.18 because the data on the birth rate is annual and the differential equation model inherently assumes that growth is occurring exponentially. So if the annual birth rate is equal to 12 per 1000 per year (B=0.012), for example, then we are assuming that:
+
+$N1=N0exp(B_w*52.10)$     where N1 is the population after 1 year and N0 is the baseline population, and $N1=N0*(1+B)$.
+
+$1.012=1*exp(B_w*52.18)$
+
+$B_w=log(1.012)/52.18$.
+
+```{r setparms}
+#########################################
+#Matrix of dimension N_ages x N_ages
+#beta = beta 
+#########################################
+
+#########################################
+#Seasonal components--
+#???Should prob be estimated?
+b1=0.2 #Seasonal amplitude
+phi=3.65 #Seasonal phase shift (weeks;[-26,26] 0=peak @ Jan 1)
+#########################################
+
+#########################################
+#Relative infectiousness for 2nd and subsequent infections
+rho1 = 0.75
+rho2 = 0.51
+#########################################
+
+#########################################
+# duration of infectiousness (months)
+#Duration in days
+dur.days1 <- 10 #days
+dur.days2 <- 7 #days
+dur.days3 <- 5 #days
+###########################################  
+
+###########################################
+# 1/duration of maternal immunity (DAYS)
+DurationMatVac= 0
+DurationNaturalProtection= 30
+###########################################
+
+###########################################
+WidthAgeClassMonth = c(rep(1,times=12), rep(12,times=4),  60, 120, 240, 240, 240 )  #Aging rate=1/width age class (months) Vector of long N_age
+############################################
+
+############################################
+#????
+#What is time(-1) unit?
+#um= -0.0001833333  #?? is this right? only die from last age class--this maybe helps with this "We assumed deaths occurred from the last age class and adjusted the net rate of immigration/emigration and death from other age groups in order to produce a rate of population growth and age structure similar to that of the US." 
+#?????????
+#From Giny's code: um=log(0.993)/52 #net rate of crude deaths (+) and immigration (-) from all age groups (per week): can adjust this to approximate population growth in state# I calibrated this parameter so we can reproduce the population growth
+um= -0.0002227
+#############################################
+
+#############################################
+#Birth rate (births/person/YEAR
+#Matrix: T rows, N_ages columns; columns 2:N_ages all 0s
+PerCapitaBirthsMonth=matrix(c(NL_B$birthrate,rep(0,nrow(NL_B)*(nrow(yinit.matrix)-1))),byrow = F,nrow=nrow(NL_B),ncol=nrow(yinit.matrix))
+
+PerCapitaBirthsMonth_total=rbind(do.call(rbind, replicate(6, PerCapitaBirthsMonth[7:18,], simplify=FALSE)),PerCapitaBirthsMonth[19:24,])
+PerCapitaBirthsMonth_total=rbind(PerCapitaBirthsMonth_total,PerCapitaBirthsMonth)
+PerCapitaBirthsMonth_total=rbind(PerCapitaBirthsMonth_total,PerCapitaBirthsMonth[327:328,])
+
+PerCapitaBirthsYear_total=PerCapitaBirthsMonth_total*12
+#############################################
+
+#############################################
+#Relaive risk of infection following 1st, 2nd, 3rd+ infections
+sigma1=0.76
+sigma2=0.6
+sigma3=0.4
+#############################################
+
+#############################################
+# frequency dependent or density dependent transmission
+q=1
+
+#############################################
+#contact matrix
+c2=c2
+
+##Baseline transmission rate determine the force of transmission
+#############################################
+
+baseline.txn.rate <-9
+
+```
+
+**NOTE: time step here is in weeks--need to adjust seasonality accordingly**
+```{r}
+ start_time = 1 # start date (years)
+ tmax = nrow((NL_B))
+# end_time = 25 # end date (years)
+my_times <- seq(start_time, tmax, by = 1) # gives a sequence from start to end
+											 # in increments of 1
+```
+
+#Save parameters in a list
+```{r saveparms}
+parms<-list(PerCapitaBirthsYear=PerCapitaBirthsYear_total,
+            DurationMatVac=DurationMatVac,
+            WidthAgeClassMonth=WidthAgeClassMonth,
+            um=um,
+            b1=b1,
+            phi=phi,
+            rho1=rho1,
+            rho2=rho2,
+            dur.days1=dur.days1,
+            dur.days2=dur.days2,
+            dur.days3=dur.days3,
+            yinit.matrix=yinit.matrix,
+            baseline.txn.rate = baseline.txn.rate,
+            q=q,
+            c=c2,
+            sigma1=sigma1,
+            sigma2=sigma2,
+            sigma3=sigma3,
+            time.step='month',
+            DurationNaturalProtection=DurationNaturalProtection
+            )
+```
+
+
+## Run the model 
+Note here we are just simulating with set parameters, not fitting to data
+```{r}
+results <- ode(y=yinit.vector, t=my_times,  
+               func=immuno_epi_model, 
+            parms=parms )
+```
+
+## Get hospitalizations based on FOI
+```{r}
+  St <- results[-c(1:220),-1]
+   q=1
+   b= parms$baseline.txn.rate/(parms$dur.days1/30.44)
+   beta=(b/100)/(sum(yinit.matrix)^(1-q))*c2
+   b1= parms$b1
+   phi=parms$phi
+   rho1=parms$rho1
+   rho2=parms$rho2
+   sigma1=parms$sigma1
+   sigma2=parms$sigma2
+   sigma3=parms$sigma3
+   t0=108
+   I1 <- St[,grep('I1', colnames(St))]
+   I2 <- St[,grep('I2', colnames(St))]
+   I3 <- St[,grep('I3', colnames(St))]
+   I4 <- St[,grep('I4', colnames(St))]
+   S1 <- St[,grep('S1', colnames(St))]
+   S2 <- St[,grep('S2', colnames(St))]
+   S3 <- St[,grep('S3', colnames(St))]
+   S0 <- St[,grep('S0', colnames(St))]
+   lambda1=matrix(0,nrow=t0,ncol=al)#Force of infection
+    for (t in 1:t0)
+    {lambda1[t,] <- as.vector((1+b1*cos(2*pi*(t-phi*12)/12))*((I1[t,]+rho1*I2[t,]+rho2*I3[t,]+rho2*I4[t,])%*%beta)/sum(St[t,]))}
+
+   
+   H1=matrix(0,nrow=t0,ncol=al)#Number of hospitalizations by age
+   for (i in 1:al){
+     H1[,i]=hosp1[i]*S0[,i]*lambda1[,i]+hosp2[i]*sigma1*S1[,i]*lambda1[,i]+hosp3[i]*sigma2*S2[,i]*lambda1[,i]+hosp3[i]*sigma3*S3[,i]*lambda1[,i]
+   }
+   
+Hosp_under5 <- H1[(nrow(H1)-11):nrow(H1),1:16]
+
+# number of hospitalizations depends on the season of observation 
+# (birth to 90 days)
+Hosp_novac_90 <- Hosp_90(t=100,H1)
+# number of hospitalizations depends on the season of observation 
+# (birth to 180 days)
+#Hosp_novac_180 <- Hosp_180(t=90,H1)
+
+# Vaccine efficacy 1-Hosp_mat_vac/Hosp_no_vac
+```
+
+
+## calculate the age of hospitalizations (age unit: month)
+```{r}
+age_midpoint <- c(seq(1/24,23/24,1/12),1.5,2.5,3.5,4.5)*12
+time.step="month"
+
+average_age_H(age_midpoint,Hosp_under5,time.step)
+```
+

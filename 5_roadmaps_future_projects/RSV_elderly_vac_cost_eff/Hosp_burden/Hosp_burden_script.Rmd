@@ -1,0 +1,96 @@
+---
+title: "RSV burden in older adults by age and risk groups"
+author: "ZHE ZHENG"
+date: "2022-12-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in time-series data
+```{r}
+#####################################################################################
+# read in dataset and data cleaning
+##################################################################################### 
+#getwd()
+#rm(list = ls())
+library(data.table)
+library(sas7bdat)
+
+# the time series data will come from SAS output
+# we only select the variable that we are interested because the whole data set is huge
+# For the cost-effectiveness study, we should add the cost variables 
+Wholeresp <- fread("/Users/zhezheng/Box/data/data/recoded_all_states_resp.csv",select = c("agemonth","zip","AGE","HOSPST","resp","resp_prim","flu","flu_prim","rsv","rsv_prim","resp_other","resp_otherprim","bronchio",'bronchio_prim',"pneumo_other","pneumo_otherprim","pneumopneumo","pneumopneumo_prim","pneumosept","pneumosept_prim","asthma","amonthdate","agecat1","riskcat"))
+
+# Depends on the output of the SAS files. fread is faster
+# Wholeresp <- read.sas7bdat("/Users/zhezheng/Box/data/data/recoded_all_states_resp.sas7bdat")
+```
+
+```{r}
+# If interested in analyzing each state, uncomment these codes
+
+# NYresp <- Wholeresp[HOSPST=="NY",]
+# AZresp <- Wholeresp[HOSPST=="AZ",]
+# FLresp <- Wholeresp[HOSPST=="FL",]
+```
+
+```{r}
+# include only the complete cases
+Wholeresp <- na.omit(Wholeresp)
+# recode the date variable
+Wholeresp$amonthdate<- as.Date(Wholeresp$amonthdate, "%d%b%Y")
+
+# make sure the age is a numeric variable not character
+Wholeresp$AGE <- as.numeric(Wholeresp$AGE)
+
+# Consider using epidemiological calendar
+# Wholeresp.1 <- Wholeresp[Wholeresp$amonthdate>"2016-06-01"&Wholeresp$amonthdate<"2021-07-01",]
+
+# sum over individual records to create monthly time-series of RSV cases, flu cases, respiratory hospitalizations by age and risk category 
+resp <- Wholeresp[,list(resp = sum(resp),rsv=sum(rsv),flu=sum(flu)), by = 'amonthdate,AGE,riskcat'] # sum over
+```
+
+```{r}
+# recode age categories to reflect what we interests: "<1","1-<2","2-<5","5-9","10-19","20-59","60-64","65-69","70-74","75-79","80+"
+
+resp$agecat_new[resp$AGE==0]  <- "<1"
+resp$agecat_new[resp$AGE==1]  <- "1-<2"
+resp$agecat_new[1<resp$AGE&resp$AGE<1]  <- "2-<5"
+resp$agecat_new[5<=resp$AGE&resp$AGE<10]  <- "5-<10"
+resp$agecat_new[5<=resp$AGE&resp$AGE<10]  <- "5-<10"
+resp$agecat_new[10<=resp$AGE&resp$AGE<20]  <- "10-<20"
+resp$agecat_new[20<=resp$AGE&resp$AGE<60]  <- "20-<60"
+resp$agecat_new[60<=resp$AGE&resp$AGE<65]  <- "60-<65"
+resp$agecat_new[65<=resp$AGE&resp$AGE<70]  <- "65-<70"
+resp$agecat_new[70<=resp$AGE&resp$AGE<75]  <- "70-<75"
+resp$agecat_new[75<=resp$AGE&resp$AGE<80]  <- "75-<80"
+resp$agecat_new[80<=resp$AGE]  <- "80+"
+```
+
+```{r}
+# reshape to create a respiratory hospitalizations array that has a column for time (48 months), a column for age (11 groups) and a column for risk groups (2 groups, may increase. For hierarchical structure, we need at least 3-4 groups to make)
+# adjust the first value to reflect the length of time
+
+# test
+df2 <- data.frame(x = rep(1:48,22),y = rep(1:2,528), z=rep(1:11,96))
+
+Array1 <- array(data = unlist(df2),
+                  dim = c(48, 11, 2),
+                dimnames = list(paste0("month",1:48),                              c("<1","1-<2","2-<5","5-9","10-19","20-59","60-64","65-69","70-74","75-79","80+"),
+                                c("high risk","low risk")))
+```
+
+```{r}
+# create a reported RSV array that has a column for time (48 months), a column for age (11 groups) and a column for risk groups (2 groups)
+
+# adjust the first value (48) to reflect the length of time
+y <- array(data=NA,dim = c(48,11,2),
+           dimnames = list(paste0("month",1:48),                              c("<1","1-<2","2-<5","5-9","10-19","20-59","60-64","65-69","70-74","75-79","80+"),
+                                c("high risk","low risk")))
+
+
+
+
+```

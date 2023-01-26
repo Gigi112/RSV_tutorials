@@ -1,0 +1,76 @@
+---
+title: "Bias and power of demonstrating maternal vaccine efficacy in seasonal RSV epidemic"
+author: "ZHE ZHENG"
+date: "2022-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Objectives
+
+* Compare the chance of success of randomized controlled trials between localities (power and efficacy).
+
+* Explain bias introduced to vaccine RCTs by not control for time of recruitment
+
+### Background
+
+(1) RSV epidemics are highly seasonal. 
+
+(2) The risk of exposure to RSV varies by season.
+
+(3) Infants are protected by transplacentally acquired antibodies from their mothers. 
+
+(4) Cord blood antibodies varies by season. XX weeks time lags from the incidence of RSV infection.
+
+(5) Susceptibility to RSV infection varies by season.
+
+(6) Probability of developing severe RSV disease decreases by age.
+\
+
+Generally,
+$$VE (\%)=(1-(\frac{ARV}{ARU}))\times100$$
+VE stands for vaccine efficacy. ARV stands for attack rate in vaccinated group. ARU stands for attack rate in unvaccinated group.
+
+For maternal vaccines against RSV hospitalizations in infants, the vaccine efficacy was measured as:
+$$VE (\%)=(1-(\frac{H_{vac}}{H_{placebo}}))\times100$$
+
+Where $H_{vac}$ stands for the number of infants that are hospitalized due to RSV infection  
+
+### VE estimates
+Depends on hospitalization incidence in vaccination groups and placebo groups. \
+
+Hypothesis: RSV vaccination delayed the first age of infection. When the epidemic is in increasing phase, it will achieve a higher efficacy against RSV hospitalizations because the probability of developing severe lower respiratory tract illness is age dependent. In decreasing phase, there will be few RSV hospitalizations in both placebo and vaccinated group. 
+
+### Bias in VE
+Factors that affect hospitalization incidence differently between vaccination groups and placebo groups.\
+
+Hypothesis: risk of exposure during observation is not consistent between vaccinated group and placebo group
+because time of recruitment is different between vaccinated and placebo group 
+
+### Power estimates
+The 4 primary factors that affect the power of vaccine efficacy trials are (1) the probability of the Type I error (hold at 5%), (2) effect size (vaccine efficacy. It needs to be above 50% for RSV), (3) variability, and (4)sample size.
+
+Hypothesis: 
+Places have higher/larger:
+
+* birth rate
+* population density
+* household size/number of children under 5 years old
+
+or have lower/less:
+
+* seasonal variations in RSV transmission
+* preterm birth or other physical conditions
+* lower socioeconomic status
+
+and recruit 2nd trimester pregnant women whose delivery date is XX weeks prior to the peak of RSV epidemics 
+\
+
+are more likely to successfully demonstrate vaccine efficacy.
+
+
+
+

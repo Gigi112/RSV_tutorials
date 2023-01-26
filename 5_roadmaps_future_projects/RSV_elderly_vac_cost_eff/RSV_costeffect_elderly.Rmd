@@ -1,0 +1,107 @@
+---
+title: "Project outline: RSV vaccination in older adults"
+author: "ZHE ZHENG"
+date: "2022-11-16"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Step 1. Estimate the true burden of hospitalizations across risk and age groups in older adults
+
+##### Background
+
+Risk groups will be defined by ACIP.  
+references: [ACIP recommendations](https://www.cdc.gov/vaccines/vpd/pneumo/hcp/who-when-to-vaccinate.html#adults-19-64)
+
+* Low risk population
+* High risk population: For adults with any of the conditions or risk factors listed below: Adults who have chronic pulmonary (including asthma), cardiovascular (excluding isolated hypertension), renal, hepatic, neurologic, hematologic, or metabolic disorders (including diabetes mellitus).
+Persons who are immunocompromised due to any cause (including but not limited to immunosuppression caused by medications or HIV infection). 
+
+
+##### Estimate the "true" burden of RSV hospitalizations and ED visits
+Model structure:\
+$Y_{ijk}$ ~ Negative Binomial ($p_{ijk}$,$r$) \
+$p_{ijk}=r/(r+λ_{ijk})$ \
+where $Y_{ijk}$ denotes the number of all-cause respiratory hospitalizations at time (month) $i$, in age group $j$, and risk group $k$. 
+$i = 1,2,...,48$ \
+We will analyze hospitalizations in 11 age categories (<1, 1, 2-4, 5-9, 10-19, 20-59, 60-64, 65-69, 70-74, 75-79, 80+ years).
+$j = 1,2,...,12$ 
+\
+\
+We define the expected value as a function of covariates and random effects such that:
+
+$$\lambda_{ijk}=\beta_{0jk}+\alpha_{1g(i)}+\alpha_{2m(i)}+\beta_{1jk}RSV_{i}+\beta_{2g(i)jk}Flu_{ik}$$
+<span style="color:red">  $RSV_{i}$ </span> (means every risk group has the same RSV timing)
+\
+\
+The number of RSV hospitalizations/ED visits in each age group and risk will be <span style="color:blue">$\beta_{1jk}RSV_{i}$</span>
+
+##### Estimate death rate in each risk group
+
+(1) Include DIED element in SAS code
+(2) Calculate the death rate in each risk and age group and assume that the death rate is the same between reported cases and the cases that did not reported
+
+\
+\
+
+### Step 2.  Fitting transmission model to time-series output
+
+Parameters to estimate (in total 6?):
+
+(1) Transmission parameter (related to transmission probability)
+(2) Amplitude of seasonality
+(3) Timing of seasonality
+(4) Duration of maternal immunity
+(5) Proportion of third LRIs that are hospitalized in
+older adults (if we assume their contact patterns are similar, we only need to estimate two parameters)
+* 60-64 (low $H_{60l}$ and high risk $\frac{\beta_{60h}}{\beta_{60l}} H_{60l}$)
+* 65-69 (low $\frac{\beta_{65l}}{\beta_{60l}}H_{60l}$ and high risk $\frac{\beta_{65h}}{\beta_{60l}}H_{60l}$)
+* 70-74 (low $\frac{\beta_{70l}}{\beta_{60l}}H_{60l}$ and high risk $\frac{\beta_{70h}}{\beta_{60l}}H_{60l}$)
+* 75-79 (low $\frac{\beta_{75l}}{\beta_{60l}}H_{60l}$ and high risk $\frac{\beta_{75h}}{\beta_{60l}}H_{60l}$)
+* 80+ years (low $H_{80l}$ and high risk $\frac{\beta_{80h}}{\beta_{80l}}H_{80l}$)
+\
+\
+
+### Step 3.  Vaccine efficacy
+
+References:
+
+(1) [Efficacy on infectiousness,preF vaccine](https://www.nejm.org/doi/full/10.1056/NEJMoa2116154)
+(2) [Efficacy on infectiousness, vector vaccine](https://academic.oup.com/jid/article/226/3/396/6064820)
+(3) [Efficacy on symptomatic infection, Pfizer](https://www.pfizer.com/news/press-release/press-release-detail/pfizer-announces-positive-top-line-data-phase-3-trial-older)
+(4) [Efficacy on symptomatic infection, GSK](https://www.gsk.com/en-gb/media/press-releases/gsk-s-older-adult-respiratory-syncytial-virus-rsv-vaccine-candidate/)
+(5) [Efficacy on symptomatic infection, Janssen](https://www.jnj.com/janssen-announces-phase-2b-data-demonstrating-its-investigational-rsv-adult-vaccine-provided-80-protection-against-lower-respiratory-infections-in-older-adults)
+
+vaccine effects:
+
+(1) Reduce the risk of infection? $(1-VE_{s})\sigma_3\lambda$
+
+\ where $VE_{s}$ is the vaccine efficacy against infection, $\sigma_3$ is the relative susceptibility during subsequent infections, and $\lambda$ is the force of transmission.
+
+(2) Reduce the infectiousness of vaccinees?
+$(1-VE_{i})I_v$
+
+\ where $VE_{i}$ is the vaccine efficacy to reduce infectiousness and $I_v$ is the number of vaccinated individuals who are infected by wild-type RSV
+
+(3) Duration of protection? Assume 1 year as a start and sensitivity analysis of 2 years and 5 years
+
+(4) In later stage: we can add age related immunogenicity?
+\
+\
+
+### Step 4.  Economic Model
+
+###### Health benefits and related costs
+(1) Treatment outcomes and costs
+(2) QALY estimation
+(3) Vaccination costs
+
+* Sample from the uncertainty distributions of the model parameters while running the model 1,000 times to generate 95% prediction interval for the number of infections, GP, ED, hospitalizations, and deaths averted
+
+* Calculate the average net monetary benefit of each vaccination strategy (and no vaccination) for WTP values varying from $10,000 to $50,000 per QALY averted (in increments of $100). 
+
+* Plot the Cost-Effectiveness Acceptability Frontier
+
+
+

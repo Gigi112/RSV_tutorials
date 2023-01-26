@@ -1,0 +1,239 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Scale hospitalizations},
+  pdfauthor={ZHE ZHENG},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Scale hospitalizations}
+\author{ZHE ZHENG}
+\date{2022-11-16}
+
+\begin{document}
+\maketitle
+
+\hypertarget{estimate-the-true-burden-of-hospitalizations-across-risk-and-age-groups-in-older-adults}{%
+\subsection{Estimate the true burden of hospitalizations across risk and
+age groups in older
+adults}\label{estimate-the-true-burden-of-hospitalizations-across-risk-and-age-groups-in-older-adults}}
+
+\hypertarget{background}{%
+\subparagraph{Background}\label{background}}
+
+Risk groups will be defined by The Elixhauser Comorbidity Indices.
+{(Question: how to stratify risk groups based on the indices?} For
+example, scores are grouped into categories of less than 0, 0, 1--4, and
+5 or higher. Chronic pulmonary disease is 3 points and Congestive heart
+failure is 7 points) references:
+\href{https://www.jstor.org/stable/40221931?seq=7\#metadata_info_tab_contents}{The
+Elixhauser Comorbidity Index score and the probablity of inpatient
+death}
+
+\begin{itemize}
+\tightlist
+\item
+  Low risk population: Index \textless= 0
+\item
+  Medium risk population: Index 1-4
+\item
+  High risk population: 5 or higher
+\end{itemize}
+
+\hypertarget{estimate-the-true-burden-of-rsv-hospitalizations-and-ed-visits}{%
+\subparagraph{Estimate the ``true'' burden of RSV hospitalizations and
+ED
+visits}\label{estimate-the-true-burden-of-rsv-hospitalizations-and-ed-visits}}
+
+Model structure:\\
+\(Y_{ijk}\) \textasciitilde{} Negative Binomial (\(p_{ijk}\),\(r\))\\
+\(p_{ijk}=r/(r+λ_{ijk})\)\\
+where \(Y_{ijk}\) denotes the number of all-cause respiratory
+hospitalizations at time (month) \(i\), in age group \(j\), and risk
+group \(k\). \(i = 1,2,...,48\)\\
+We will analyze hospitalizations in 11 age categories (\textless1, 1,
+2-4, 5-9, 10-19, 20-59, 60-64, 65-70, 70-74, 75-79, 80+ years).
+\(j = 1,2,...,12\)\\
+\strut \\
+We define the expected value as a function of covariates and random
+effects such that:
+
+\[\lambda_{ijk}=\beta_{0jk}+\alpha_{1g(i)}+\alpha_{2m(i)}+\beta_{1jk}RSV_{ik}+\beta_{2g(i)jk}Flu_{ik}\]
+{Question 1: Should we use risk group specific RSV indicator
+\(RSV_{ik}\)} (means RSV hospitalizations in high-risk or low-risk
+children) or{ \(RSV_{i}\) } (means every risk group has the same RSV
+timing) ?\\
+\strut \\
+The number of RSV hospitalizations/ED visits in each age group and risk
+will be {\(\beta_{1jk}RSV_{ik}\)}
+
+\hypertarget{estimate-death-rate-in-each-risk-group}{%
+\subparagraph{Estimate death rate in each risk
+group}\label{estimate-death-rate-in-each-risk-group}}
+
+\begin{enumerate}
+\def\labelenumi{(\arabic{enumi})}
+\tightlist
+\item
+  Include DIED element in SAS code
+\item
+  Calculate the death rate in each risk and age group and assume that
+  the death rate is the same between reported cases and the cases that
+  did not reported
+\end{enumerate}
+
+\hypertarget{fitting-transmission-model-to-time-series-output}{%
+\subparagraph{Fitting transmission model to time-series
+output}\label{fitting-transmission-model-to-time-series-output}}
+
+Parameters to estimate (in total 6?):
+
+\begin{enumerate}
+\def\labelenumi{(\arabic{enumi})}
+\tightlist
+\item
+  Transmission parameter (related to transmission probability)
+\item
+  Amplitude of seasonality
+\item
+  Timing of seasonality
+\item
+  Duration of maternal immunity
+\item
+  Proportion of third LRIs that are hospitalized in older adults (if we
+  assume their contact patterns are similar, we only need to estimate
+  two parameters)
+\end{enumerate}
+
+\begin{itemize}
+\tightlist
+\item
+  60-64 (low \(H_{60l}\), medium
+  \(\frac{\beta_{60m}}{\beta_{60l}} H_{60l}\), and high risk
+  \(\frac{\beta_{60h}}{\beta_{60l}} H_{60l}\))
+\item
+  65-69 (low \(\frac{\beta_{65l}}{\beta_{60l}}H_{60l}\), medium
+  \(\frac{\beta_{65m}}{\beta_{60l}}H_{60l}\), and high risk
+  \(\frac{\beta_{65h}}{\beta_{60l}}H_{60l}\))
+\item
+  70-74 (low \(\frac{\beta_{70l}}{\beta_{60l}}H_{60l}\), medium
+  \(\frac{\beta_{70m}}{\beta_{60l}}H_{60l}\), and high risk
+  \(\frac{\beta_{70h}}{\beta_{60l}}H_{60l}\))
+\item
+  75-79 (low \(\frac{\beta_{75l}}{\beta_{60l}}H_{60l}\), medium
+  \(\frac{\beta_{75m}}{\beta_{60l}}H_{60l}\), and high risk
+  \(\frac{\beta_{75h}}{\beta_{60l}}H_{60l}\))
+\item
+  80+ years (low \(H_{80l}\), medium
+  \(\frac{\beta_{80m}}{\beta_{80l}}H_{80l}\), and high risk
+  \(\frac{\beta_{80h}}{\beta_{80l}}H_{80l}\))\\
+\end{itemize}
+
+\hypertarget{vaccine-efficacy}{%
+\subparagraph{Vaccine efficacy}\label{vaccine-efficacy}}
+
+References:
+
+\begin{enumerate}
+\def\labelenumi{(\arabic{enumi})}
+\tightlist
+\item
+  \href{https://www.nejm.org/doi/full/10.1056/NEJMoa2116154}{Efficacy on
+  infectiousness,preF vaccine}
+\item
+  \href{https://academic.oup.com/jid/article/226/3/396/6064820}{Efficacy
+  on infectiousness, vector vaccine}
+\item
+  \href{https://www.pfizer.com/news/press-release/press-release-detail/pfizer-announces-positive-top-line-data-phase-3-trial-older}{Efficacy
+  on symptomatic infection, Pfizer}
+\item
+  \href{https://www.gsk.com/en-gb/media/press-releases/gsk-s-older-adult-respiratory-syncytial-virus-rsv-vaccine-candidate/}{Efficacy
+  on symptomatic infection, GSK}
+\item
+  \href{https://www.jnj.com/janssen-announces-phase-2b-data-demonstrating-its-investigational-rsv-adult-vaccine-provided-80-protection-against-lower-respiratory-infections-in-older-adults}{Efficacy
+  on symptomatic infection, Janssen}
+\end{enumerate}
+
+vaccine effects:
+
+\begin{enumerate}
+\def\labelenumi{(\arabic{enumi})}
+\tightlist
+\item
+  Reduce the risk of infection? \((1-VE_{s})\sigma_3\lambda\)
+\end{enumerate}
+
+~where \(VE_{s}\) is the vaccine efficacy against infection,
+\(\sigma_3\) is the relative susceptibility during subsequent
+infections, and \(\lambda\) is the force of transmission.
+
+\begin{enumerate}
+\def\labelenumi{(\arabic{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Reduce the infectiousness of vaccinees? \((1-VE_{i})I_v\)
+\end{enumerate}
+
+~where \(VE_{i}\) is the vaccine efficacy to reduce infectiousness and
+\(I_v\) is the number of vaccinated individuals who are infected by
+wild-type RSV
+
+\end{document}
