@@ -346,7 +346,7 @@ update(censor_model_jags,10000)
 censor_model_sample <- coda.samples(censor_model_jags,
                             c("beta0","beta1",
                             "lambda1","lambda2",
-                            "lambda3","inv_var"),
+                            "inv_var"),
                              100000,thin=20)
 ```
 
@@ -506,3 +506,23 @@ Leroux <- inv.tau*(rho*w.mat + (1 - rho)*Id.mat)
 inv_var ~ dgamma(0.01, 0.01)}"
 ```
 
+## Same process to sample posteriors of spatiotemporal model
+
+```{r, message=FALSE, eval=FALSE}
+## loading data from the working directory
+spatial_model_data <- readRDS("./spatial_model_data.rds")
+
+### Read in the model file using the jags.model function ##
+spatial_model_jags <- jags.model(textConnection(censor_spatial_model),
+                     data=spatial_model_data,n.chains = 4)
+
+############ burn-in period ############
+update(spatial_model_jags,10000)
+
+######## sample for posterior distribution ##########
+spatial_model_sample <- coda.samples(spatial_model_jags,
+                            c("beta0","beta1",
+                            "inv_var",
+                            "b0","b1","b2"),
+                             100000,thin=20)
+```
