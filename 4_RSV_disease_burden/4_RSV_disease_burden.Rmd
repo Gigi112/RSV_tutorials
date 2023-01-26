@@ -1,8 +1,14 @@
 ---
-title: "Estimate RSV disease burden using Hierarchical Bayesian regression"
-author: "ZHE ZHENG"
-date: "2023-01-26"
-output: html_document
+title: "Bayesian model in JAGS"
+subtitle: "Tutorial 3 for transition"
+author: "Zhe Zheng (Gigi)^[zhe.zheng@yale.edu]"
+date: "2023-01-16"
+fontsize: 10pt
+output: 
+  beamer_presentation:
+  theme: CambridgeUS
+  colortheme: "beaver"
+  fonttheme: "structurebold"
 ---
 
 ```{r setup, include=FALSE}
@@ -12,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Outline
 
 - Section 1: Background knowledge of estimating disease burden (hospitalizations/mortality etc) with statistical models.
-
+\
+\
 - Section 2: Background knowledge of Hierarchical Bayesian regression.
-
-- Section 3: R code for running the Hierarchical Bayesian regression to estimate in older adults by age and risk groups
+\
+\
+- Section 3: R code for running the Hierarchical Bayesian regression to estimate in older adults by age and risk groups.
