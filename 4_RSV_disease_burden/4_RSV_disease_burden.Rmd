@@ -77,8 +77,12 @@ where $Y$ is the number of observed failures (diseases), $p$ is the probability 
 
 ## Brief introduction to ARIMA model
 
-5.**ARIMA model**
+5.**Autoregressive integrated moving average (ARIMA) model**
 \
+Autoregressive integrated moving average (ARIMA) model can account for the autorcorrelation of the time-series and also the time-delayed associations. For infectious diseases, the number of the infected individuals in the next time point is correlated with the number of the infected individuals currently. This phenomenon is described as autocorrelated. The influenza/RSV infection reported this week may contribute to hospitalizations/deaths next week, which means the time-delayed associations. For example, in Gilca's paper^[Rodica Gilca, Gaston De Serres, Danuta Skowronski, Guy Boivin, David L. Buckeridge, The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization, American Journal of Epidemiology, Volume 170, Issue 7, 1 October 2009, Pages 925–936, https://doi.org/10.1093/aje/kwp195], ARIMA model is given by: 
+\small
+$$Y_t=\alpha_0 + \alpha_1Temp_t + \alpha_2Holiday_t + \beta_1Flu_t+ ... + \sum_{i=0}^2\omega_iRSV_{t-i}$$
+$Y$ is the observed number of deaths/hospitalization in a particular week $t$, $\alpha_0$ is the baseline hospitalization incidence,$\alpha_1Temp_t + \alpha_2Holiday_t$ are the hospitalizations attributable to seasonal changes and holiday gathering, $\beta_1Flu_t$ is the flu attributable hospitalizations, and $\sum_{i=0}^2\omega_iRSV_{t-i}$ is the RSV attributable hospitalizations. This example suggested that not only RSV infections this week but also RSV infections reported 1 week and 2 weeks ago associates with hospitalizations reported this week. 
 
 
 ## Initial publications of the method
@@ -104,13 +108,11 @@ where $Y$ is the number of observed failures (diseases), $p$ is the probability 
   - [Modelling the unidentified mortality burden from thirteen infectious pathogenic microorganisms in infants](https://www.cambridge.org/core/journals/epidemiology-and-infection/article/modelling-the-unidentified-mortality-burden-from-thirteen-infectious-pathogenic-microorganisms-in-infants/26AE7DA522FD6DCE6CE3E4F2D3CB9A79)
   - [Hospitalization Attributable to Influenza and Other Viral Respiratory Illnesses in Canadian Children](https://journals.lww.com/pidj/fulltext/2006/09000/Hospitalization_Attributable_to_Influenza_and.8.aspx)
 
-5. **ARIMA model**
+5. **Autoregressive integrated moving average (ARIMA) model**
   - [Community influenza outbreaks and emergency department ambulance diversion](https://www.sciencedirect.com/science/article/pii/S0196064403013167)
   - [Time-Series Analysis of the Relation between Influenza Virus and Hospital Admissions of the Elderly in Ontario, Canada, for Pneumonia, Chronic Lung Disease, and Congestive Heart Failure](https://academic.oup.com/aje/article/149/1/85/205393)
 
 
 ## Other useful references
-
-- []
 
 - [The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization](https://academic.oup.com/aje/article/170/7/925/91526)
