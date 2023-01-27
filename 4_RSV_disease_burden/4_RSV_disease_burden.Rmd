@@ -122,10 +122,14 @@ Hierarchical Bayesian regression can make population inference based on group an
 
 ## Background knowledge of Hierarchical Bayesian regression: example
 
-For example, if we would like to estimate the baseline hospitalizations $\beta_{0jk}$ in age $j$ and socioeconomic group $k$, we can treat this parameter as (1) independent, meaning that the baseline hospitalizations are different in each group and we will need to estimate 27 parameters $\beta_{0j=1,k=1}$, $\beta_{0j=1,k=2}$...$\beta_{0j=9,k=3}$, (2) the same, meaning that the baseline hospitalizations are the same in all age and socioeconomic group and we will only need to estimate one parameter $\beta_0$, and (3) random draws from the a normal distribution, meaning that baseline hospitalizations are normally distributed in the whole population and baseline hospitalization of each subpopulation $jk$ is an realization of the distribution (a point in the distribution). In this case, we will estimate the mean and variations of the normal distribution and then get the subpopulation estimates.
+For example, if we would like to estimate the baseline hospitalizations $\beta_{0jk}$ in age $j$ and socioeconomic group $k$, we can treat this parameter as (1) independent, meaning that the baseline hospitalizations are different in each group and we will need to estimate 27 parameters $\beta_{0j=1,k=1}$, $\beta_{0j=1,k=2}$...$\beta_{0j=9,k=3}$, (2) the same, meaning that the baseline hospitalizations are the same in all age and socioeconomic group and we will  estimate one parameter $\beta_0$, and (3) random draws from the a normal distribution, meaning that baseline hospitalizations are normally distributed in the whole population and baseline hospitalization of each subpopulation $jk$ is an realization of the distribution (a point in the distribution). In this case, we will estimate the mean and variations of the normal distribution and then get the subpopulation estimates.
+\
+\
+If we model the parameters in Bayesian framework, the third scenario corresponds to a Hierarchical Bayesian model. 
 
+## Background knowledge of Hierarchical Bayesian regression: Benefits
 
-
+From the aforementioned example, e
 
 ## Further readings on Hierarchical Bayesian regression
 
