@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Outline
 
-- Section 1: Background knowledge of estimating disease burden (hospitalizations/mortality etc) with statistical models.
+- Section 1: Background knowledge of estimating respiratory virus attributable disease burden (hospitalizations/mortality etc) with statistical models.
 \
 \
 - Section 2: Background knowledge of Hierarchical Bayesian regression.
@@ -28,7 +28,9 @@ knitr::opts_chunk$set(echo = TRUE)
 \
 - Section 4: R code for running the Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups.
 
-## Section 1: Background knowledge of estimating disease burden with statistical models.
+**Note: In this tutorial, we will focus on using time-series data. Therefore, we will not introduce other methods to estimate disease burden such as the disease pyramid.** For other methods, please check out Ginny's class *quantitative method in infectious disease epidemiology* and Dan's class *Public Health Surveillance*. 
+
+## Section 1: Background knowledge of estimating respiratory virus attributable disease burden with statistical models.
 
 There are 5 main statistical methods to estimate the hospitalization/mortality attributable to respiratory virus infection. In Dan's class, Public Health Surveillance, he teaches all four methods in details. Here, we will only give a brief introduction to each of the method and provide the link to the initial publications.
 \
@@ -42,9 +44,9 @@ There are 5 main statistical methods to estimate the hospitalization/mortality a
 
 4. **Negative binomial regression with identity link**
 
-5. **Box-Jenkins transfer function**
+5. **Box-Jenkins transfer function (ARIMA model)**
 
-## Brief introduction to 5 statistical methods for estimating respiratory virus–attributable hospitalization/mortality
+## Brief introduction to serfling regression and periseason differences
 
 1.**Serfling regression** \
   This type of model identifies the epidemic season and establish a epidemic threshold (seasonal baseline) using historical data. After predicting the expected diseases baseline, observed diseases above the baseline (epidemic threshold) during the epidemic season will be attributable to the viral infection. The basic Serfling regression is given by: $Y_t = \mu+ bt+\sum \alpha_i cos \theta+ \sum \beta_i sin \theta$ where $Y_t$ is the expected hospitalizations at time t. $\mu$ is the baseline. $bt$ captures time trend. $\sum \alpha_i \cos \theta+ \sum \beta_i \sin \theta$ are for the seasonal variations. Serfling regression is a linear model initially using ordinary least square to fit. [\color{blue} Click to see an R code example](https://kmcconeghy.github.io/flumodelr/articles/04-serfling.html)
@@ -55,14 +57,28 @@ There are 5 main statistical methods to estimate the hospitalization/mortality a
    \
   \
   
-## Brief introduction to 5 statistical methods for estimating respiratory virus–attributable hospitalization/mortality
+## Brief introduction to poisson regression with log link
 
 3.**Poisson regression with log link**
 \
-  Poisson regression is used to model count variables. Therefore, it can be used to model the number of hospitalizations over time. The logarithm of the expected value of the count variable is modeled as a linear combination of the predictor variables. For example, in Thompson's paper^[Thompson WW, Shay DK, Weintraub E, et al. Mortality Associated With Influenza and Respiratory Syncytial Virus in the United States. JAMA. 2003;289(2):179–186. doi:10.1001/jama.289.2.179], the poisson regression is given by: \small
+  Poisson regression is used to model count variables. Therefore, it can be used to model the number of hospitalizations over time. The logarithm of the expected value of the count variable is modeled as a linear combination of the predictor variables. For example, in Thompson's paper^[Thompson WW, Shay DK, Weintraub E, et al. Mortality Associated With Influenza and Respiratory Syncytial Virus in the United States. JAMA. 2003;289(2):179–186. doi:10.1001/jama.289.2.179], the poisson regression with log link is given by: \small
   $$Y = \alpha \exp^{(\beta_0 + \beta_1t + \beta_2t^2  +  \beta_3 \sin(2\pi/52) + \beta_4 \cos(2\pi/52) + \beta_5 Flu_A(H1N1) + \beta_6 Flu_A(H3N2) + \beta_7Flu_B + \beta_8RSV)}$$ 
   In this example, $Y$ is the observed number of deaths/hospitalization in a particular week, $\alpha$ is the population size as an offset term,$\beta_0$ is the baseline hospitalization incidence, $\beta_1t + \beta_2t^2$ represents the long-term trend of hospitalizations, $\sin(2\pi/52) + \beta_4 \cos(2\pi/52)$ captures the annual seasonal variations of hospitalizations, the rest are the pathogens that can contribute to the increase of the observed hospitalizations.    
 
+## Brief introduction to negative binomial regression with identity link
+
+4.**Negative binomial regression with identity link**
+\
+Negative binomial regression is also used to model count variables. It is a generalization of the poisson regression, in which the variance is assumed to be equal to the mean. The new approach use an identity link instead of an log link because log link corresponds to a multiplicative relationship among covariates (including baseline hospitalizations, seasonality, and several respiratory viruses) while identity link assumes additive effects. Apparently, additive effects are more realistic than multiplicative effects. The negative binomial regression with identity link is given by:  
+\small$$Y \sim NB(p,r), \space p = \frac{r}{r+\lambda}$$
+\small$$\lambda=\beta_0 + \beta_1t + \beta_2t^2  +  \beta_3 \sin(2\pi/52) + \beta_4 \cos(2\pi/52) + ... + \beta_8RSV$$ 
+
+where $Y$ is the number of observed failures (diseases), $p$ is the probability of success (survival/not infected), $r$ is the number of successes (survival/not infected) and $\lambda$ is the expected value of failures (diseases). All other parameters remain the same as what we introduced in Poisson regression.
+
+## Brief introduction to ARIMA model
+
+5.**ARIMA model**
+\
 
 
 ## Initial publications of the method
