@@ -79,10 +79,10 @@ where $Y$ is the number of observed failures (diseases), $p$ is the probability 
 
 5.**Autoregressive integrated moving average (ARIMA) model**
 \
-Autoregressive integrated moving average (ARIMA) model can account for the autorcorrelation of the time-series and also the time-delayed associations. For infectious diseases, the number of the infected individuals in the next time point is correlated with the number of the infected individuals currently. This phenomenon is described as autocorrelated. The influenza/RSV infection reported this week may contribute to hospitalizations/deaths next week, which means the time-delayed associations. For example, in Gilca's paper^[Rodica Gilca, Gaston De Serres, Danuta Skowronski, Guy Boivin, David L. Buckeridge, The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization, American Journal of Epidemiology, Volume 170, Issue 7, 1 October 2009, Pages 925–936, https://doi.org/10.1093/aje/kwp195], ARIMA model is given by: 
+ARIMA model can account for the autorcorrelation of the time-series and also the time-delayed associations. For infectious diseases, the number of the infected individuals in the next time point is correlated with the number of the infected individuals currently. This phenomenon is described as autocorrelated. The influenza infection reported this week may contribute to hospitalizations next week, which means the time-delayed associations. For example, in Gilca's paper^[\tiny Rodica Gilca, Gaston De Serres, Danuta Skowronski, Guy Boivin, David L. Buckeridge, The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization, American Journal of Epidemiology, Volume 170, Issue 7, 1 October 2009, Pages 925–936, https://doi.org/10.1093/aje/kwp195], ARIMA model is given by: 
 \small
-$$Y_t=\alpha_0 + \alpha_1Temp_t + \alpha_2Holiday_t + \beta_1Flu_t+ ... + \sum_{i=0}^2\omega_iRSV_{t-i}$$
-$Y$ is the observed number of deaths/hospitalization in a particular week $t$, $\alpha_0$ is the baseline hospitalization incidence,$\alpha_1Temp_t + \alpha_2Holiday_t$ are the hospitalizations attributable to seasonal changes and holiday gathering, $\beta_1Flu_t$ is the flu attributable hospitalizations, and $\sum_{i=0}^2\omega_iRSV_{t-i}$ is the RSV attributable hospitalizations. This example suggested that not only RSV infections this week but also RSV infections reported 1 week and 2 weeks ago associates with hospitalizations reported this week. 
+$$Y_t=\alpha_0 + \alpha_1Temp_t + \alpha_2Holiday_t + \beta_1Flu_t + \sum_{i=0}^2\omega_iRSV_{t-i}$$
+$Y_t$ is the observed number of hospitalizations in a particular week $t$, $\alpha_0$ is the baseline hospitalization incidence,$\alpha_1Temp_t + \alpha_2Holiday_t$ are the hospitalizations attributable to seasonal changes and holiday gathering, $\beta_1Flu_t$ is the flu attributable hospitalizations, and $\sum_{i=0}^2\omega_iRSV_{t-i}$ is the RSV attributable hospitalizations. **This example suggested that not only RSV infections this week but also RSV infections reported 1 week and 2 weeks ago associates with hospitalizations reported this week.** 
 
 
 ## Initial publications of the method
@@ -116,3 +116,7 @@ $Y$ is the observed number of deaths/hospitalization in a particular week $t$, $
 ## Other useful references
 
 - [The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization](https://academic.oup.com/aje/article/170/7/925/91526)
+
+## Section 2: Background knowledge of Hierarchical Bayesian regression
+
+
