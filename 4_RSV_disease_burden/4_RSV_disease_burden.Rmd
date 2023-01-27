@@ -20,13 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 - Section 1: Background knowledge of estimating respiratory virus attributable disease burden (hospitalizations/mortality etc) with statistical models.
 \
 \
-- Section 2: Background knowledge of Hierarchical Bayesian regression.
+- Section 2: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations.
 \
 \
-- Section 3: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations.
-\
-\
-- Section 4: R code for running the Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups.
+- Section 3: R code for running the Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups.
 
 **Note: In this tutorial, we will focus on using time-series data. Therefore, we will not introduce other methods to estimate disease burden such as the disease pyramid.** For other methods, please check out Ginny's class *quantitative method in infectious disease epidemiology* and Dan's class *Public Health Surveillance*. 
 
@@ -117,6 +114,25 @@ $Y_t$ is the observed number of hospitalizations in a particular week $t$, $\alp
 
 - [The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization](https://academic.oup.com/aje/article/170/7/925/91526)
 
-## Section 2: Background knowledge of Hierarchical Bayesian regression
+## Section 2: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations
+
+### Background knowledge of Hierarchical Bayesian regression
+
+Hierarchical Bayesian regression can make population inference based on group and individual observations. The benefits of using a Hierarchical Bayesian structure is that it can shrink the uncertainty of inference while allow between-group variability. 
+
+## Background knowledge of Hierarchical Bayesian regression: example
+
+For example, if we would like to estimate the baseline hospitalizations $\beta_{0jk}$ in age $j$ and socioeconomic group $k$, we can treat this parameter as (1) independent, meaning that the baseline hospitalizations are different in each group and we will need to estimate 27 parameters $\beta_{0j=1,k=1}$, $\beta_{0j=1,k=2}$...$\beta_{0j=9,k=3}$, (2) the same, meaning that the baseline hospitalizations are the same in all age and socioeconomic group and we will only need to estimate one parameter $\beta_0$, and (3) random draws from the a normal distribution, meaning that baseline hospitalizations are normally distributed in the whole population and baseline hospitalization of each subpopulation $jk$ is an realization of the distribution (a point in the distribution). In this case, we will estimate the mean and variations of the normal distribution and then get the subpopulation estimates.
+
+
+
+
+## Further readings on Hierarchical Bayesian regression
+
+- [Bayesian hierarchical modeling by wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
+
+- [Chapter 10 Bayesian Hierarchical Modeling by Drs. Jim Albert and Jingchen Hu](https://bayesball.github.io/BOOK/bayesian-hierarchical-modeling.html)
+
+- [Hierarchical Bayesian Modeling by Dr. Angie Wolfgang](https://astrostatistics.psu.edu/RLectures/hierarchical.pdf)
 
 
