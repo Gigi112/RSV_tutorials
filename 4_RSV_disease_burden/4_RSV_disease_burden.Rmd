@@ -9,6 +9,10 @@ output:
   theme: CambridgeUS
   colortheme: "beaver"
   fonttheme: "structurebold"
+header-includes:
+  - \usepackage{pdfpages}
+  - \setbeamercolor{background canvas}{bg=}
+  - \makeatletter\beamer@ignorenonframefalse\makeatother
 ---
 
 ```{r setup, include=FALSE}
@@ -20,10 +24,10 @@ knitr::opts_chunk$set(echo = TRUE)
 - Section 1: Background knowledge of estimating respiratory virus attributable disease burden (hospitalizations/mortality etc) with statistical models.
 \
 \
-- Section 2: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations.
+- Section 2: Background knowledge of Hierarchical Bayesian regression
 \
 \
-- Section 3: R code for running the Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups.
+- Section 3: Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups and its R code.
 
 **Note: In this tutorial, we will focus on using time-series data. Therefore, we will not introduce other methods to estimate disease burden such as the disease pyramid.** For other methods, please check out Ginny's class *quantitative method in infectious disease epidemiology* and Dan's class *Public Health Surveillance*. 
 
@@ -115,21 +119,30 @@ $Y_t$ is the observed number of hospitalizations in a particular week $t$, $\alp
 - [The Need for Validation of Statistical Methods for Estimating Respiratory Virus–Attributable Hospitalization](https://academic.oup.com/aje/article/170/7/925/91526)
 
 ## Section 2: Background knowledge of using Hierarchical Bayesian regression to estimate RSV attributable hospitalizations
-
-### Background knowledge of Hierarchical Bayesian regression
-
-Hierarchical Bayesian regression can make population inference based on group and individual observations. The benefits of using a Hierarchical Bayesian structure is that it can shrink the uncertainty of inference while allow between-group variability. 
-
-## Background knowledge of Hierarchical Bayesian regression: example
-
+The benefits of using a Hierarchical Bayesian structure is that it can shrink the uncertainty of inference while allow between-group variability. 
+\
+\
 For example, if we would like to estimate the baseline hospitalizations $\beta_{0jk}$ in age $j$ and socioeconomic group $k$, we can treat this parameter as (1) independent, meaning that the baseline hospitalizations are different in each group and we will need to estimate 27 parameters $\beta_{0j=1,k=1}$, $\beta_{0j=1,k=2}$...$\beta_{0j=9,k=3}$, (2) the same, meaning that the baseline hospitalizations are the same in all age and socioeconomic group and we will  estimate one parameter $\beta_0$, and (3) random draws from the a normal distribution, meaning that baseline hospitalizations are normally distributed in the whole population and baseline hospitalization of each subpopulation $jk$ is an realization of the distribution (a point in the distribution). In this case, we will estimate the mean and variations of the normal distribution and then get the subpopulation estimates.
-\
-\
-If we model the parameters in Bayesian framework, the third scenario corresponds to a Hierarchical Bayesian model. 
-
+ 
 ## Background knowledge of Hierarchical Bayesian regression: Benefits
 
-From the aforementioned example, e
+If we model the parameters in Bayesian framework, the third scenario corresponds to a Hierarchical Bayesian model.
+\
+\
+Compared with treating the parameters as group-specific, Bayesian Hierarchical structure pools information across groups to help shrink the uncertainty of the single group estimates. 
+\
+\
+Compared with treating the group specific parameters as homogeneous, Bayesian Hierarchical structure gives the flexibility and possibility of estimating group specific parameters. It can help evaluate the hypothesis of between-group variation.
+
+## Visualization of a Hierarchical Bayesian structure: 
+
+![Hierarchical Bayesian structure](./Hier_Bay_figure.png)
+
+```{r,eval=FALSE,echo=FALSE}
+curve(dnorm(x, 0, 100), from=-200, to=200,main="prior distribution of mean of beta0",xlab="mu",ylab="dnorm(0,100)")
+curve(dinvgamma(x, shape=0.01, rate = 0.01, log = FALSE), from=0, to=200,ylab="dinvgamma(0.01,0,01)",main="prior distribution of\nvariance sigma square",xlab="sigma square")
+```
+
 
 ## Further readings on Hierarchical Bayesian regression
 
@@ -139,4 +152,19 @@ From the aforementioned example, e
 
 - [Hierarchical Bayesian Modeling by Dr. Angie Wolfgang](https://astrostatistics.psu.edu/RLectures/hierarchical.pdf)
 
+## Section 3: Hierarchical Bayesian regression to estimate RSV attributable hospitalizations in older adults by age and risk groups and its R code.
 
+\includepdf[pages=2]{Hier_Bay_figure.pdf}
+
+
+## Hierarchical Bayesian regression structure
+
+\includepdf[pages=3]{Hier_Bay_figure.pdf}
+
+``` {=latex}
+\end{frame}
+\includepdf[pages=1-7]{model_structure.pdf}
+\begin{frame}
+```
+
+## R code (JAGS code) for Hierarchical Bayesian regression structure

@@ -24,7 +24,7 @@ The order of the tutorials was listed as follows:
 
 - Directory 3_JAGS_Bayesian_model. This directory explains how to estimate parameters in Bayesian framework using JAGS (Just Another Gibbs Sampler) model. It first gives an simple example then expands to censored data and spatial analysis. It also talks about how to create a neighboring matrix in this directory.
 
-- Directory 4_RSV_disease_burden. I have not yet worked on this but it will focus on using Hierarchical Bayesian regression to estimate the "true" burden of RSV hospitalizations in older adults.
+- Directory 4_RSV_disease_burden. I have not finished working on this but it will focus on using Hierarchical Bayesian regression to estimate the "true" burden of RSV hospitalizations in older adults.
 
 - Directory 5_roadmaps_future_projects. Road maps for two projects that I have just started: (1) cost-effectiveness of  vaccines against RSV hospitalizations in older adults in the United States and (2) factors affecting maternal RSV vaccine efficacy in clinical trials.
 
