@@ -168,3 +168,203 @@ curve(dinvgamma(x, shape=0.01, rate = 0.01, log = FALSE), from=0, to=200,ylab="d
 ```
 
 ## R code (JAGS code) for Hierarchical Bayesian regression structure
+
+Please open Jags_model.R for the whole R script.
+\
+\
+$k=1,2,3$ represent each socioeconomic groups, $j=1,...,9$ represent each age groups, and $i=1,...,108$ represent each month.
+\
+\
+Hierarchical Bayesian model are specified in jags as follows:
+```{r, eval=FALSE}
+model {
+for(k in 1:n.group){  
+  for (j in 1:n.age){
+      for (i in 1:n.date) { 
+      
+ y[i,j,k] ~ dnegbin(prob[i,j,k],r) 
+ # negative binomial
+  prob[i,j,k]<- r/(r+lambda[i,j,k])  ## likelihood 
+```
+
+## R code (JAGS code): expected respiratory hospitalizations
+
+```{r, eval=FALSE}
+# expected respiratory hospitalizations lambda
+    lambda[i,j,k] <- rd0[j,k]+ # baseline hosp
+exp(epi[epi.year[i]]) + # year to year variation
+# epi.year[i] is an input indicator for the calendar year
+# epi.year[i] = 1,2,...,9
+exp(delta[month[i]]) + # monthly variations
+# month[i] is an input indicator for the epi month
+# month[i] = 1,2,...,12 (1 for July and 12 for June)
+rsv[i,j,k]*rd2[j,k] + # RSV attributable hosp
+flu[i,j,k]*rd1[epi.year[i],j,k] # flu attributable hosp
+      }
+    
+# baseline hospitalizations 
+#(must be greater than or equal to 0)
+  rd0[j,k] <- exp(beta0[j,k])
+  beta0[j,k]~ dnorm(mu0,tau0) 
+# hierarchical structure: shared mean and variance
+```
+
+## The coefficient of flu in each age and SES group
+
+```{r, eval=FALSE}
+ for (p in 1:n.year) { 
+# epi-year effects for antigen shift
+# coefficient of influenza-associated respiratory 
+# hospitalization varies annually 
+    rd1[p,j,k] <- exp(beta1[p,j,k]) 
+    # ensure positive coefs
+    beta1[p,j,k] ~ dnorm(beta1_mean[p,j,k],tau.flu)
+    # shared variance
+    # the mean of the coefficient is 
+# a multiplicative combination of 
+    beta1_mean[p,j,k] <- gamma_flu[k]+ omega_flu[j]+ xi_flu[p]
+    # SES effects gamma_flu[k]
+    # age effects omega_flu[j]
+    # epi-year (antigen) xi_flu[p]
+    }
+```
+
+## The coefficient of RSV in each age and SES group
+
+```{r, eval=FALSE}
+ # this coefficient depends on SES and age 
+    rd2[j,k] <- exp(beta2[j,k]) # ensure positive
+    beta2[j,k] ~ dnorm(beta2_mean[j,k],tau.rsv)
+    beta2_mean[j,k]<- gamma[k]+omega[j]
+   # SES effects gamma[k]
+  # age effects omega[j]
+```
+
+## hyperparameters
+
+```{r, eval=FALSE}
+# n.year = 1,2,...,9
+for (p in 1:n.year) { 
+epi[p] ~ dnorm(0, tau.epi) 
+# prior for yearly variation of baseline hosp
+xi_flu[p] ~ dnorm(0,tau7)}
+# prior for flu annual variation (antigen shift) 
+
+  for (m in 1:12){
+    delta[m] ~ dnorm(0,disp.m)
+  }
+# prior for monthly variation of baseline hosp
+```
+
+## hyperparameters (continued)
+
+```{r, eval=FALSE}
+for(k in 1:n.group){
+gamma_flu[k] ~ dnorm(0,tau3)
+gamma[k] ~ dnorm(0, tau4)
+}
+# prior for SES effects of flu and RSV
+
+for(j in 1:n.age){
+omega[j] ~ dnorm(0, tau5)
+omega_flu[j] ~ dnorm(0,tau6)
+}
+# prior for age effects of flu and RSV
+```
+
+## Priors
+```{r, eval=FALSE}
+ r ~ dunif(0,250) 
+#r > 0 serves as an overdispersion parameter
+  mu0 ~ dnorm(0,0.0001) # 0.0001 = 1/variance
+# In jags, dnorm specify precision 
+  
+# the conjugate priors for variance of normal distribution
+# is an inverse Gamma distribution
+# In jags, we put priors on precision
+  tau0 ~ dgamma(0.01, 0.01)
+  tau1 ~ dgamma(0.01, 0.01)
+  tau2 ~ dgamma(0.01, 0.01)
+  tau3 ~ dgamma(0.01, 0.01)
+  tau4 ~ dgamma(0.01, 0.01)
+  tau5 ~ dgamma(0.01, 0.01)
+  tau6 ~ dgamma(0.01, 0.01)
+  tau7 ~ dgamma(0.01, 0.01)
+  tau8 ~ dgamma(0.01, 0.01)
+  tau.epi ~ dgamma(0.01, 0.01)
+  tau.flu ~ dgamma(0.01, 0.01)
+  tau.rsv ~ dgamma(0.01, 0.01)
+  disp.m ~ dgamma(0.01, 0.01)
+```
+
+## Clarification for input data
+
+**Note: we coded as rsv[i,j,k] and flu[i,j,k] for the purpose of a clear dimension for multiplication.**  This is a 1 to 1 multiplication, not a matrix multiplication. rsv[i,j,k] are the same for j=1,...,9, representing ICD-9 recorded RSV hospitalizations in children under 2 in each SES group in each month. flu[i,j,k] are the same for j=1,...,9, representing the total ICD-9 recorded flu hospitalizations in the entire age spectrum in each SES group in each month.
+
+\
+\ 
+
+In the equation, we simplify them to $RSV_{ik}$ and $Flu_{ik}$.
+
+## Specify input data
+
+```{r, eval=FALSE}
+epi.year <- as.factor(rep(1:9, each=12))
+# indicator for calendar year
+month <- rep(1:12,9)
+# indicator for epi month (1 for July and 12 for June)
+
+dataset <- list('y' = y_income_whole, 
+# respiratory hospitalizations in each age and  
+# SES group in each month
+"rsv"=rsv_income_whole,
+# ICD-9 recorded RSV hospitalizations   
+# in children under 2 in each SES group in each month
+"flu"=flu_income_whole, 
+# the total ICD-9 recorded flu hospitalizations in 
+# the entire age spectrum in each SES group in each month 
+'epi.year'=epi.year,"month"=month,
+n.age=9,n.date=108,n.year=9,"n.group"=3) 
+# number of age/SES groups; number of months and years
+```
+
+## Posterior sampling
+
+```{r, eval=FALSE}
+jags_post <- jags.model(
+  textConnection(model_string), 
+  data = dataset,n.chains = 3)
+# specify the number of chains
+
+update(jags_post, n.iter=82500) # burn-in period
+
+rsv_resp <- coda.samples(jags_post,
+                         variable.names=
+  c("rd2","lambda","rd1", "rd0","epi","delta"),
+                      thin = 10,n.iter = 12500)
+# posterior samples
+```
+
+## Estimate the RSV-attributable hospitalizations in each age and SES group
+
+```{r, eval=FALSE}
+## Remember to check convergence first
+## use: gelman.diag() see 3_JAGS_Bayesian_model
+## Calculate RSV attributable respiratory 
+## hospitalization incidence and percent
+  post1 <- as.data.frame(as.matrix(rsv_resp[[1]]))
+  post2 <- as.data.frame(as.matrix(rsv_resp[[2]]))
+  post3 <- as.data.frame(as.matrix(rsv_resp[[3]]))
+  post <- bind_rows(post1,post2,post3)
+## A total of 3750 posterior samples
+  lambda <- post[, grep("lambda", colnames(post), fixed=T)]
+  rd2.resp <- post[, grep("rd2[", colnames(post), fixed=T)]
+  
+rsv_count <- array(data = NA,dim = c(3750,108,9,3))
+for (i in 1:108) {
+  for (j in 1:9) {
+    for (k in 1:3) {
+      rsv_count[,i,j,k] <- rsv_income[i,j,k]*rd2.resp[,j+9*(k-1)]}}}
+## posterior samples of RSV-attributable hospitalizations
+## in each SES and age group in each month
+```
